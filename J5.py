@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from copy import copy
 import cnorm
 from cnorm.parsing.statement import Statement
 from cnorm.parsing.declaration import Declaration
@@ -7,7 +8,7 @@ from cnorm.passes import to_c
 from pyrser.grammar import Grammar
 from pyrser import meta
 
-class MaPremiereClasse(Grammar, Declaration):
+class AspectC(Grammar, Declaration):
 
     entry = "translation_unit"
     grammar = """
@@ -34,14 +35,14 @@ class AtEnd:
 
 
         
-@meta.hook(MaPremiereClasse)
+@meta.hook(AspectC)
 def add_begin(self, block, idi, statement):
     topDoggyDog = AtBegin(block.ref, self.value(idi), statement.body, len(block.ref.body))
     block.ref.body.append(topDoggyDog)
     return True
 
 
-@meta.hook(MaPremiereClasse)
+@meta.hook(AspectC)
 def add_end(self, block, idi, statement):
     topDoggyDog = AtEnd(block.ref, self.value(idi), statement.body, len(block.ref.body))
     block.ref.body.append(topDoggyDog)
@@ -65,16 +66,23 @@ def maSuperTransfo(ast):
             for i in it.ast.body:
                 if not isinstance(i, AtBegin) and not isinstance(i, AtEnd):
                     if i._name == it.fname:
-                        for val in it.body:
-                            i.body.body.append(val)
-                            
+                        blc = copy(i.body)
+                        blc.body = []
+                        for bod in i.body.body:
+                            if type(bod) == cnorm.nodes.Return:
+                                for val in it.body:
+                                    blc.body.append(val)
+                            if not isinstance(bod, AtBegin) and not isinstance(bod, AtEnd):
+                                blc.body.append(bod)    
+                                                    
+                        i.body = blc             
     for it in reversed(maSuperListe):
         ast.body.pop(it.idx)
 
 
 
         
-a = MaPremiereClasse()
+a = AspectC()
 r = a.parse_file("./main.c")
 maSuperTransfo(r)
 print("\n")
