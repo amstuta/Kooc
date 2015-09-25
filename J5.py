@@ -174,5 +174,4 @@ def maSuperTransfo(ast):
 a = AspectC()
 r = a.parse_file("./main.c")
 maSuperTransfo(r)
-print("\n")
 print(r.to_c())
