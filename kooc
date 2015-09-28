@@ -14,7 +14,7 @@ execPath = os.getcwd()
 filePath = os.path.dirname(os.path.realpath(__file__))
 
 
-class Kook(Grammar, Declaration):
+class Kooc(Grammar, Declaration):
     entry = 'translation_unit'
     grammar = """
     declaration = [Declaration.declaration | module]
@@ -23,7 +23,7 @@ class Kook(Grammar, Declaration):
 
 
 
-@meta.hook(Kook)
+@meta.hook(Kooc)
 def add_module(self, statement, mName):    
     return True
 
@@ -34,7 +34,6 @@ def main():
         print('Only one parameter required')
         return 1
     inFile = execPath + '/' + argv[1]
-    print(inFile)
     outFile = ''
     if not isfile(inFile):
         print('Given file doesn\'t exist')
@@ -46,7 +45,7 @@ def main():
     else:
         return 1
 
-    a = Kook()
+    a = Kooc()
     res = a.parse_file(inFile)
     # transformation
     fd = open(outFile, 'w+')
