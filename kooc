@@ -24,7 +24,7 @@ class Kooc(Grammar, Declaration):
 
 
 @meta.hook(Kooc)
-def add_module(self, statement, mName):    
+def add_module(self, statement, mName):
     return True
 
 
