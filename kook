@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+
+import os
+from sys import argv
+from pyrser import meta
+from pyrser.grammar import Grammar
+from cnorm.parsing.statement import Statement
+from cnorm.parsing.declaration import Declaration
+from os.path import isfile
+from cnorm.passes import to_c
+
+
+execPath = os.getcwd()
+filePath = os.path.dirname(os.path.realpath(__file__))
+
+
+class Kook(Grammar, Declaration):
+    entry = 'translation_unit'
+    grammar = """
+    declaration = [Declaration.declaration | module]
+    module = ["@module" id: i Statement.compound_statement :st #add_module(st, i)]
+    """
+
+
+
+@meta.hook(Kook)
+def add_module(self, statement, mName):    
+    return True
+
+
+
+def main():
+    if len(argv) != 2:
+        print('Only one parameter required')
+        return 1
+    inFile = execPath + '/' + argv[1]
+    print(inFile)
+    outFile = ''
+    if not isfile(inFile):
+        print('Given file doesn\'t exist')
+        return 1
+    if inFile.endswith('.kc'):
+        outFile = inFile.replace('.kc', '.c')
+    elif inFile.endswith('.kh'):
+        outFile = inFile.replace('.kh', '.h')
+    else:
+        return 1
+
+    a = Kook()
+    res = a.parse_file(inFile)
+    # transformation
+    fd = open(outFile, 'w+')
+    fd.write(str(res.to_c()))
+    fd.close()
+    return 0
+    
+    
+if __name__ == '__main__':
+    main()
