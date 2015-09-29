@@ -18,14 +18,26 @@ filePath = os.path.dirname(os.path.realpath(__file__))
 class Kooc(Grammar, Declaration):
     entry = 'translation_unit'
     grammar = """
-    declaration = [Declaration.declaration | module]
-    module = ["@module" id: i Statement.compound_statement :st #add_module(st, i)]
+    declaration = [Declaration.declaration | module | import]
+    module = ["@module" id :i Statement.compound_statement :st #add_module(st, i)]
+    import = ["@import" '"' [id ".kh"] :i '"' #add_import(current_block, i)]
     """
-
-
+    imports = []
+    
 
 @meta.hook(Kooc)
 def add_module(self, statement, mName):
+    return True
+
+
+@meta.hook(Kooc)
+def add_import(self, ast, ident):
+    mod_name = self.value(ident)
+    if mod_name in Kooc.imports:
+        return True
+    a = Kooc()
+    r = a.parse_file(mod_name)
+    ast.ref.body.extend(r.body)
     return True
 
 
