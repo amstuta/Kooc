@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+from module import *
 from sys import argv
 from pyrser import meta
 from pyrser.grammar import Grammar
