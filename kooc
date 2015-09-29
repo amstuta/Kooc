@@ -23,7 +23,7 @@ class Kooc(Grammar, Declaration):
     import = ["@import" '"' [id ".kh"] :i '"' #add_import(current_block, i)]
     """
     imports = []
-    
+
 
 @meta.hook(Kooc)
 def add_module(self, statement, mName):
