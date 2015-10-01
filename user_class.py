@@ -40,9 +40,12 @@ class Class:
         if not hasattr(decl._ctype, 'fields'):
             setattr(decl._ctype, 'fields', [])
         for mem in self.members:
-            decl._ctype.fields.append(self.members[mem])
+            if type(self.members[mem]._ctype) != cnorm.nodes.FuncType:
+                decl._ctype.fields.append(self.members[mem])
         for d in self.decls:
             item = self.decls[d]
+            if type(item._ctype) == cnorm.nodes.FuncType:
+                continue
             item._ctype._storage = cnorm.nodes.Storages.STATIC
             decl._ctype.fields.append(item)
         return decl

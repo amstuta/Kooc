@@ -27,13 +27,12 @@ class Kooc(Grammar, Declaration):
     import = ["@import" '"' [id ".kh"] :i '"' #add_import(current_block, i)]
     implementation = ["@implementation" id :class_name Statement.compound_statement :st #add_implementation(class_name, st)]
 
-    compound_statement = [ [
+    compound_statement = [
     '{'
     __scope__:current_block
     #new_blockstmt(_,current_block)
-    [ ["@member" [line_of_code | compound_statement] :st #add_member(_, current_block, st) ] | line_of_code]*
+    [ ["@member" [line_of_code | compound_statement] #add_member(_, current_block) ] | line_of_code]*
     '}'
-    ]
     ]
 
     class = ["@class" id :class_name compound_statement :st #add_class(current_block, class_name, st)]
@@ -54,7 +53,7 @@ def add_module(self, statement, ident):
 
 
 @meta.hook(Kooc)
-def add_member(self, node, ast, statement):
+def add_member(self, node, ast):
     if not hasattr(node, 'members'):
         setattr(node, 'members', [])
     node.members.extend(ast.ref.body)
