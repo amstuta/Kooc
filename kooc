@@ -25,17 +25,29 @@ class Kooc(Grammar, Declaration):
     declaration = [Declaration.declaration | module | import | implementation | class]
     module = ["@module" id :i Statement.compound_statement :st #add_module(st, i)]
     import = ["@import" '"' [id ".kh"] :i '"' #add_import(current_block, i)]
+
+    /*
     implementation = ["@implementation" id :class_name Statement.compound_statement :st #add_implementation(class_name, st)]
+    */
 
     compound_statement = [
     '{'
-    __scope__:current_block
-    #new_blockstmt(_,current_block)
+    __scope__ :current_block #new_blockstmt(_,current_block)
     [ ["@member" [line_of_code | compound_statement] #add_member(_, current_block) ] | line_of_code]*
     '}'
     ]
 
     class = ["@class" id :class_name compound_statement :st #add_class(current_block, class_name, st)]
+
+
+    implementation = ["@implementation" id :class_name imp_compound_st :st #add_implementation(class_name, st)]
+    imp_compound_st = [
+    '{'
+    __scope__ :current_block #new_blockstmt(_, current_block)
+    ["@member"? line_of_code]*
+    '}'
+    ]
+
     """
     imports = []
 
