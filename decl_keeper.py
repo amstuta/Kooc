@@ -6,6 +6,7 @@ class DeclKeeper:
         self.ids = []
         self.modules = {}
 
+    @staticmethod
     def instance():
         if DeclKeeper._instance:
             return DeclKeeper._instance
