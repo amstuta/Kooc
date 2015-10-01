@@ -6,6 +6,7 @@ class DeclKeeper:
         self.ids = []
         self.modules = {}
         self.types = {}
+        self.implementations = {}
 
     @staticmethod
     def instance():
@@ -47,3 +48,17 @@ class DeclKeeper:
         if self.type_exists(ident):
             return self.types[ident]
         return None
+
+    def add_implementation(self, ident, statement):
+        self.implementations[ident] = statement
+
+    def implementation_exists(self, ident):
+        if ident in self.implementations:
+            return True
+        return False
+
+    def get_implementation(self, ident):
+        if self.implementation_exists(ident):
+            return self.implementations[ident]
+        return None
+            
