@@ -26,7 +26,16 @@ class Mangler:
         res += proto._name + '$'
         res += '$' + proto._ctype._identifier
         if type(proto._ctype) == cnorm.nodes.FuncType:
+            res += '_'
             for par in proto._ctype.params:
-                res += '$' + par._ctype._identifier
+                pointer = par._ctype._decltype
+                while pointer != None:
+                    if type(pointer) == cnorm.nodes.PointerType:
+                        res +='P'
+                    else:
+                        break
+                    pointer = pointer._decltype
+                res += '$' + par._ctype._identifier + '_'
+                
 
         return res
