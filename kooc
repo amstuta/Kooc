@@ -56,10 +56,8 @@ def add_module(self, statement, ident):
 def add_member(self, node, ast):
     if not hasattr(node, 'members'):
         setattr(node, 'members', [])
-    node.members.extend(ast.ref.body)
-    for elem in node.members:
-        if elem in ast.ref.body:
-            ast.ref.body.remove(elem)
+    node.members.append(ast.ref.body[len(ast.ref.body) - 1])
+    ast.ref.body.pop(len(ast.ref.body) - 1)
     return True
 
 
