@@ -28,7 +28,9 @@ class Kooc(Grammar, Declaration):
 
 
 @meta.hook(Kooc)
-def add_module(self, statement, mName):
+def add_module(self, statement, ident):
+    mod = Module(ident, statement)
+    DeclKeeper.instance().add_module(mod)
     return True
 
 

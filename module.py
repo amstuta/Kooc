@@ -1,13 +1,13 @@
 class Module:
     
-    def __init__(self):
-        self.modules = {}
+    def __init__(self, ident, statement):
+        self.decls = {}
+        self.ident = ident
+        for st in statement.body:
+            self.decls[Mangler.instance().muckFangle(st)] = st
 
     def __getitem__(self, idx):
-        return self.modules[idx]
-
-    def __setitem__(self, idx, val):
-        self.modules[idx] = val
-
-    def __delitem__(self, idx):
-        del self.modules[idx]
+        if idx in self.decls:
+            return self.decls[idx]
+        return None
+        
