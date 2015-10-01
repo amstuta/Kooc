@@ -7,7 +7,9 @@ class Module:
         # Declarations
         self.decls = {}
         for st in statement.body:
-            self.decls[Mangler.instance().muckFangle(ident, st)] = st
+            dec_name = Mangler.instance().muckFangle(st, ident)
+            st._name = dec_name
+            self.decls[dec_name] = st
 
         # Nom du module
         self.ident = ident
@@ -16,7 +18,7 @@ class Module:
         self.out = []
 
         # Declaration trouvee dans le fichier courrant ou non
-        self.current_file = flag
+        self.recurs = flag
 
 
     def __getitem__(self, idx):

@@ -7,7 +7,9 @@ class Implementation:
 
         self.imps = {}
         for i in imp.body:
-            self.imps[Mangler.instance().muckFangle(ident, i)] = i
+            dec_i = Mangler.instance().muckFangle(i, ident)
+            i._name = dec_i
+            self.imps[dec_i] = i
 
 
     def __getitem__(self, ident):

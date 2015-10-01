@@ -7,6 +7,7 @@ class DeclKeeper:
         self.modules = {}
         self.types = {}
         self.implementations = {}
+        self.classes = {}
 
     @staticmethod
     def instance():
@@ -62,3 +63,15 @@ class DeclKeeper:
             return self.implementations[ident]
         return None
             
+    def add_class(self, ident, cl):
+        self.classes[ident] = cl
+
+    def class_exists(self, ident):
+        if ident in self.classes:
+            return True
+        return False
+
+    def get_class(self, ident):
+        if class_exists(ident):
+            return self.classes[ident]
+        return None

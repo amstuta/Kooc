@@ -2,6 +2,7 @@
 
 import os
 import cnorm
+from user_class import *
 from module import *
 from implementation import *
 from decl_keeper import *
@@ -21,10 +22,21 @@ filePath = os.path.dirname(os.path.realpath(__file__))
 class Kooc(Grammar, Declaration):
     entry = 'translation_unit'
     grammar = """
-    declaration = [Declaration.declaration | module | import | implementation]
+    declaration = [Declaration.declaration | module | import | implementation | class]
     module = ["@module" id :i Statement.compound_statement :st #add_module(st, i)]
     import = ["@import" '"' [id ".kh"] :i '"' #add_import(current_block, i)]
     implementation = ["@implementation" id :class_name Statement.compound_statement :st #add_implementation(class_name, st)]
+
+    compound_statement = [ [
+    '{'
+    __scope__:current_block
+    #new_blockstmt(_,current_block)
+    [ ["@member" [line_of_code | compound_statement] :st #add_member(_, current_block, st) ] | line_of_code]*
+    '}'
+    ]
+    ]
+
+    class = ["@class" id :class_name compound_statement :st #add_class(current_block, class_name, st)]
     """
     imports = []
 
@@ -35,8 +47,20 @@ class Kooc(Grammar, Declaration):
 
 @meta.hook(Kooc)
 def add_module(self, statement, ident):
+    ident = self.value(ident)
     mod = Module(ident, statement, self.recurs)
-    DeclKeeper.instance().add_module(mod)
+    DeclKeeper.instance().add_module(ident, mod)
+    return True
+
+
+@meta.hook(Kooc)
+def add_member(self, node, ast, statement):
+    if not hasattr(node, 'members'):
+        setattr(node, 'members', [])
+    node.members.extend(ast.ref.body)
+    for elem in node.members:
+        if elem in ast.ref.body:
+            ast.ref.body.remove(elem)
     return True
 
 
@@ -47,6 +71,16 @@ def add_implementation(self, class_name, statement):
     class_name = self.value(class_name)
     imp = Implementation(class_name, statement)
     DeclKeeper.instance().add_implementation(class_name, imp)
+    return True
+
+
+@meta.hook(Kooc)
+def add_class(self, ast, class_name, statement):
+    class_name = self.value(class_name)
+    cl = Class(class_name, statement, self.recurs)
+    DeclKeeper.instance().add_class(class_name, cl)
+    tpd = cl.register_typedef()
+    ast.ref.body.append(tpd)
     return True
 
 
@@ -69,8 +103,14 @@ def add_import(self, ast, ident):
 
 def moduleTransfo(ast):
     for mod in DeclKeeper.instance().modules:
-        for decl in mod.decls:
-            ast.body.append(decl)
+        if DeclKeeper.instance().modules[mod].recurs == False:
+            for decl in DeclKeeper.instance().modules[mod].decls:
+                ast.body.append(DeclKeeper.instance().modules[mod].decls[decl])
+
+    for class_name in DeclKeeper.instance().implementations:
+        imp = DeclKeeper().instance().implementations[class_name]
+        for i in imp.imps:
+            ast.body.append(imp.imps[i])
 
 
 def main():
