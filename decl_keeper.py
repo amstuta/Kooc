@@ -5,6 +5,7 @@ class DeclKeeper:
     def __init__(self):
         self.ids = []
         self.modules = {}
+        self.types = {}
 
     @staticmethod
     def instance():
@@ -32,4 +33,17 @@ class DeclKeeper:
     def get_module(self, ident):
         if self.module_exists(ident):
             return self.modules[ident]
+        return None
+
+    def add_type(self, ident, statement):
+        self.types[ident] = statement
+
+    def type_exists(self, ident):
+        if ident in self.types:
+            return True
+        return False
+
+    def get_type(self, ident):
+        if self.type_exists(ident):
+            return self.types[ident]
         return None
