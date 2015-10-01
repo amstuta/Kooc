@@ -3,6 +3,7 @@
 import os
 import cnorm
 from module import *
+from implementation import *
 from decl_keeper import *
 from sys import argv
 from pyrser import meta
@@ -20,17 +21,32 @@ filePath = os.path.dirname(os.path.realpath(__file__))
 class Kooc(Grammar, Declaration):
     entry = 'translation_unit'
     grammar = """
-    declaration = [Declaration.declaration | module | import]
+    declaration = [Declaration.declaration | module | import | implementation]
     module = ["@module" id :i Statement.compound_statement :st #add_module(st, i)]
     import = ["@import" '"' [id ".kh"] :i '"' #add_import(current_block, i)]
+    implementation = ["@implementation" id :class_name Statement.compound_statement :st #add_implementation(class_name, st)]
     """
     imports = []
+
+    def __init__(self, flag=False):
+        self.recurs = flag
+        super(Kooc, self).__init__()
 
 
 @meta.hook(Kooc)
 def add_module(self, statement, ident):
-    mod = Module(ident, statement)
+    mod = Module(ident, statement, self.recurs)
     DeclKeeper.instance().add_module(mod)
+    return True
+
+
+@meta.hook(Kooc)
+def add_implementation(self, class_name, statement):
+    if self.recurs:
+        return True
+    class_name = self.value(class_name)
+    imp = Implementation(class_name, statement)
+    DeclKeeper.instance().add_implementation(class_name, imp)
     return True
 
 
@@ -39,7 +55,7 @@ def add_import(self, ast, ident):
     mod_name = self.value(ident)
     if mod_name in Kooc.imports:
         return True
-    a = Kooc()
+    a = Kooc(True)
     r = a.parse_file(mod_name)
     for elem in r.body:
         if type(elem) == cnorm.nodes.Decl:
@@ -50,6 +66,11 @@ def add_import(self, ast, ident):
     ast.ref.body.append(raw)
     return True
 
+
+def moduleTransfo(ast):
+    for mod in DeclKeeper.instance().modules:
+        for decl in mod.decls:
+            ast.body.append(decl)
 
 
 def main():
@@ -70,7 +91,7 @@ def main():
 
     a = Kooc()
     res = a.parse_file(inFile)
-    # transformation
+    moduleTransfo(res)
     fd = open(outFile, 'w+')
     fd.write(str(res.to_c()))
     fd.close()
