@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 import os
+import cnorm
 from module import *
+from decl_keeper import *
 from sys import argv
 from pyrser import meta
 from pyrser.grammar import Grammar
@@ -37,7 +39,13 @@ def add_import(self, ast, ident):
         return True
     a = Kooc()
     r = a.parse_file(mod_name)
-    ast.ref.body.extend(r.body)
+    for elem in r.body:
+        if type(elem) == cnorm.nodes.Decl:
+            DeclKeeper.instance().add_id(elem._name)
+    inc_name = mod_name.replace('.kh', '.h')
+    inc = "#include \"%s\"\n" % inc_name
+    raw = cnorm.nodes.Raw(inc)
+    ast.ref.body.append(raw)
     return True
 
 
