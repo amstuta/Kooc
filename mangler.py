@@ -7,6 +7,9 @@ class Mangler:
         pass
 
     inst = None
+    speci = {4 : "L",
+             5 : "LL",
+             6 : "S"}
 
     @staticmethod
     def instance():
@@ -24,18 +27,30 @@ class Mangler:
         res += '$'
         res += module + '$'
         res += proto._name + '$'
+        pointerR = proto._ctype._decltype
+        while pointerR != None:
+            if type(pointerR) == cnorm.nodes.PointerType:
+                res += 'P'
+            elif type(pointerR) == cnorm.nodes.ArrayType:
+                res += 'A'    
+            pointerR = pointerR._decltype
+            if proto._ctype._specifier in range(4,7):
+                res += Mangler.speci[proto._ctype._specifier]
         res += '$' + proto._ctype._identifier
         if type(proto._ctype) == cnorm.nodes.FuncType:
-            res += '_'
             for par in proto._ctype.params:
                 pointer = par._ctype._decltype
+                res += '$'
                 while pointer != None:
                     if type(pointer) == cnorm.nodes.PointerType:
-                        res +='P'
-                    else:
-                        break
+                        res += 'P'
+                    elif type(pointer) == cnorm.nodes.ArrayType:
+                        res += 'A'
                     pointer = pointer._decltype
-                res += '$' + par._ctype._identifier + '_'
+                if par._ctype._specifier in range(4,7):
+                    res += Mangler.speci[par._ctype._specifier]
+                res += '$' + par._ctype._identifier
+                
                 
 
         return res
