@@ -18,6 +18,10 @@ class Mangler:
 
         return Mangler.inst
 
+    def ChangeClass(proto, newClassy, oldClassy):
+        return proto.replace(oldClassy, newClassy)
+        
+
     def muckFangle(self, proto, module):
         res = ""
         if type(proto._ctype) == cnorm.nodes.FuncType :
