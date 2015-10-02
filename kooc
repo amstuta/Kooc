@@ -23,7 +23,7 @@ class Kooc(Grammar, Declaration):
     entry = 'translation_unit'
     grammar = """
     declaration = [Declaration.declaration | module | import | implementation | class]
-    module = ["@module" id :i Statement.compound_statement :st #add_module(st, i)]
+    module = ["@module" #add_object(current_block) id :i Statement.compound_statement :st #add_module(st, i)]
     import = ["@import" '"' [id ".kh"] :i '"' #add_import(current_block, i)]
 
     compound_statement = [
@@ -51,6 +51,12 @@ class Kooc(Grammar, Declaration):
     def __init__(self, flag=False):
         self.recurs = flag
         super(Kooc, self).__init__()
+
+
+@meta.hook(Kooc)
+def add_object(self, ast):
+    ast.ref.types['Object'] = None
+    return True
 
 
 @meta.hook(Kooc)
@@ -109,8 +115,6 @@ def add_import(self, ast, ident):
         Kooc.types = ast.ref.types
     a = Kooc(True)
     r = a.parse_file(mod_name)
-    print(Kooc.types)
-    print(ast.ref.types)
     for elem in r.body:
         if type(elem) == cnorm.nodes.Decl:
             DeclKeeper.instance().add_id(elem._name)
@@ -133,6 +137,22 @@ def moduleTransfo(ast):
             ast.body.append(imp.imps[i])
 
 
+def create_header():
+    a = Kooc()
+    res = a.parse_file('.kh')
+    moduleTransfo(res)
+    del DeclKeeper.instance().modules['Object']
+    outFile = execPath + '/.h'
+    fd = open(outFile, 'w+')
+    fd.write(str(res.to_c()))
+    fd.close()
+
+
+def add_include(ast):
+    raw = cnorm.nodes.Raw('#include \".h\"\n')
+    ast.body.insert(0, raw)
+
+    
 def main():
     if len(argv) != 2:
         print('Only one parameter required')
@@ -149,8 +169,10 @@ def main():
     else:
         return 1
 
+    create_header()
     a = Kooc()
     res = a.parse_file(inFile)
+    add_include(res)
     moduleTransfo(res)
     fd = open(outFile, 'w+')
     fd.write(str(res.to_c()))
