@@ -149,7 +149,6 @@ def create_header():
     res.body.insert(0, cnorm.nodes.Raw('#ifndef _H\n#define _H\n'))
     moduleTransfo(res)
     res.body.append(cnorm.nodes.Raw('#endif\n'))
-    del DeclKeeper.instance().modules['Object']
     outFile = execPath + '/.h'
     fd = open(outFile, 'w+')
     fd.write(str(res.to_c()))
@@ -189,6 +188,7 @@ def main():
     a = Kooc()
     res = a.parse_file(inFile)
     add_include(res)
+    del DeclKeeper.instance().modules['Object']
     moduleTransfo(res)
     if outFile.endswith('.h'):
         add_defines(res, outFile)

@@ -15,10 +15,9 @@ class Mangler:
     def instance():
         if (Mangler.inst == None):
             Mangler.inst = Mangler()
-
         return Mangler.inst
 
-    def ChangeClass(proto, newClassy, oldClassy):
+    def changeClass(self, proto, newClassy, oldClassy):
         return proto.replace(oldClassy, newClassy)
         
 

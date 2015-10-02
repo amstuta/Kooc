@@ -1,6 +1,7 @@
 import cnorm
 from mangler import *
 from copy import deepcopy
+from decl_keeper import *
 
 class Class:
 
@@ -41,6 +42,8 @@ class Class:
                 d._name = dec_d
                 self.decls[dec_d] = d
 
+        self.get_inheritance()
+
 
     # Ecrit le typedef struct
     def register_typedef(self):
@@ -49,6 +52,13 @@ class Class:
         decl._ctype._storage = cnorm.nodes.Storages.TYPEDEF
         if not hasattr(decl._ctype, 'fields'):
             setattr(decl._ctype, 'fields', [])
+
+        parent = None
+        if 'parent' in self.members:
+            parent = deepcopy(self.members['parent'])
+            del self.members['parent']
+            decl._ctype.fields.append(parent)
+
         for mem in self.members:
             if type(self.members[mem]._ctype) != cnorm.nodes.FuncType:
                 decl._ctype.fields.append(self.members[mem])
@@ -61,6 +71,8 @@ class Class:
                 continue
             item._ctype._storage = cnorm.nodes.Storages.STATIC
             decl._ctype.fields.append(item)
+        if parent != None:
+            self.members['parent'] = parent
         return decl
 
 
@@ -91,6 +103,16 @@ class Class:
                         statement.members.append(deepcopy(decl))
                         statement.body.remove(decl)
 
+
+    def get_inheritance(self):
+        if not self.ident in DeclKeeper.instance().inher:
+            return
+        mom = DeclKeeper.instance().inher[self.ident]
+        decl = cnorm.nodes.Decl('parent', cnorm.nodes.PrimaryType(mom))
+        self.members['parent'] = decl
+        
+
+        
 
 
     def decl_exists(self, ident):
