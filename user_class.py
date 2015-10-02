@@ -43,6 +43,7 @@ class Class:
                 self.decls[dec_d] = d
 
         self.get_inheritance()
+        self.add_inheritance()
 
 
     # Ecrit le typedef struct
@@ -110,9 +111,25 @@ class Class:
         mom = DeclKeeper.instance().inher[self.ident]
         decl = cnorm.nodes.Decl('parent', cnorm.nodes.PrimaryType(mom))
         self.members['parent'] = decl
-        
 
-        
+
+    def add_inheritance(self):
+        mom = DeclKeeper.instance().inher[self.ident]
+        obj = DeclKeeper.instance().classes[mom]
+
+        for mem_id in obj.members:
+            mem = obj.members[mem_id]
+            ident = Mangler.instance().changeClass(mem, self.ident, mom)
+            tmp = deepcopy(mem)
+            tmp._name = ident
+            self.members[ident] = tmp
+
+        for decl_id in obj.decls:
+            decl = obj.decls[decl_id]
+            ident = Mangler.instance().changeClass(decl, self.ident, mom)
+            tmp = deepcopy(decl)
+            tmp._name = ident
+            self.decls[ident] = tmp
 
 
     def decl_exists(self, ident):
