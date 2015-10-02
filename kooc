@@ -140,7 +140,9 @@ def moduleTransfo(ast):
 def create_header():
     a = Kooc()
     res = a.parse_file('.kh')
+    res.body.insert(0, cnorm.nodes.Raw('#ifndef _H\n#define _H\n'))
     moduleTransfo(res)
+    res.body.append(cnorm.nodes.Raw('#endif\n'))
     del DeclKeeper.instance().modules['Object']
     outFile = execPath + '/.h'
     fd = open(outFile, 'w+')
@@ -151,6 +153,14 @@ def create_header():
 def add_include(ast):
     raw = cnorm.nodes.Raw('#include \".h\"\n')
     ast.body.insert(0, raw)
+
+
+def add_defines(ast, file_name):
+    file_name = file_name[file_name.rfind('/') + 1:]
+    define = file_name.replace('.', '_').upper()
+    ast.body.insert(0, cnorm.nodes.Raw('#ifndef %s\n' % define))
+    ast.body.insert(1, cnorm.nodes.Raw('#define %s\n' % define))
+    ast.body.append(cnorm.nodes.Raw('#endif\n'))
 
     
 def main():
@@ -174,6 +184,8 @@ def main():
     res = a.parse_file(inFile)
     add_include(res)
     moduleTransfo(res)
+    if outFile.endswith('.h'):
+        add_defines(res, outFile)
     fd = open(outFile, 'w+')
     fd.write(str(res.to_c()))
     fd.close()
