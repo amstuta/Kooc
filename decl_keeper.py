@@ -8,6 +8,7 @@ class DeclKeeper:
         self.types = {}
         self.implementations = {}
         self.classes = {}
+        self.inher = {}
 
     @staticmethod
     def instance():
@@ -72,6 +73,6 @@ class DeclKeeper:
         return False
 
     def get_class(self, ident):
-        if class_exists(ident):
+        if self.class_exists(ident):
             return self.classes[ident]
         return None

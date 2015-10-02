@@ -23,7 +23,7 @@ class Kooc(Grammar, Declaration):
     entry = 'translation_unit'
     grammar = """
     declaration = [Declaration.declaration | module | import | implementation | class]
-    module = ["@module" id :i Statement.compound_statement :st #add_module(st, i)]
+    module = ["@module" #add_object(current_block) id :i Statement.compound_statement :st #add_module(st, i)]
     import = ["@import" '"' [id ".kh"] :i '"' #add_import(current_block, i)]
 
     compound_statement = [
@@ -33,7 +33,7 @@ class Kooc(Grammar, Declaration):
     '}'
     ]
 
-    class = ["@class" id :class_name #add_type(current_block, class_name) compound_statement :st #add_class(current_block, class_name, st)]
+    class = ["@class" id :class_name #add_type(current_block, class_name) [':' id :parent_class #add_parent(class_name, parent_class) ]? compound_statement :st #add_class(current_block, class_name, st)]
 
 
     implementation = ["@implementation" id :class_name imp_compound_st :st #add_implementation(class_name, st)]
@@ -46,10 +46,23 @@ class Kooc(Grammar, Declaration):
 
     """
     imports = []
+    types = None
 
     def __init__(self, flag=False):
         self.recurs = flag
         super(Kooc, self).__init__()
+
+
+@meta.hook(Kooc)
+def add_object(self, ast):
+    ast.ref.types['Object'] = None
+    return True
+
+
+@meta.hook(Kooc)
+def add_parent(self, class_name, parent_name):
+    DeclKeeper.instance().inher[self.value(class_name)] = self.value(parent_name)
+    return True
 
 
 @meta.hook(Kooc)
@@ -71,7 +84,10 @@ def add_member(self, node, ast):
 
 @meta.hook(Kooc)
 def add_type(self, ast, class_name):
+    if Kooc.types == None:
+        Kooc.types = ast.ref.types
     ast.ref.types[self.value(class_name)] = None
+    Kooc.types[self.value(class_name)] = None
     return True
 
 
@@ -101,6 +117,8 @@ def add_import(self, ast, ident):
     mod_name = self.value(ident)
     if mod_name in Kooc.imports:
         return True
+    if Kooc.types == None:
+        Kooc.types = ast.ref.types
     a = Kooc(True)
     r = a.parse_file(mod_name)
     for elem in r.body:
@@ -125,6 +143,32 @@ def moduleTransfo(ast):
             ast.body.append(imp.imps[i])
 
 
+def create_header():
+    a = Kooc()
+    res = a.parse_file('.kh')
+    res.body.insert(0, cnorm.nodes.Raw('#ifndef _H\n#define _H\n'))
+    moduleTransfo(res)
+    res.body.append(cnorm.nodes.Raw('#endif\n'))
+    del DeclKeeper.instance().modules['Object']
+    outFile = execPath + '/.h'
+    fd = open(outFile, 'w+')
+    fd.write(str(res.to_c()))
+    fd.close()
+
+
+def add_include(ast):
+    raw = cnorm.nodes.Raw('#include \".h\"\n')
+    ast.body.insert(0, raw)
+
+
+def add_defines(ast, file_name):
+    file_name = file_name[file_name.rfind('/') + 1:]
+    define = file_name.replace('.', '_').upper()
+    ast.body.insert(0, cnorm.nodes.Raw('#ifndef %s\n' % define))
+    ast.body.insert(1, cnorm.nodes.Raw('#define %s\n' % define))
+    ast.body.append(cnorm.nodes.Raw('#endif\n'))
+
+    
 def main():
     if len(argv) != 2:
         print('Only one parameter required')
@@ -141,9 +185,13 @@ def main():
     else:
         return 1
 
+    create_header()
     a = Kooc()
     res = a.parse_file(inFile)
+    add_include(res)
     moduleTransfo(res)
+    if outFile.endswith('.h'):
+        add_defines(res, outFile)
     fd = open(outFile, 'w+')
     fd.write(str(res.to_c()))
     fd.close()

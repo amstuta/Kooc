@@ -1,0 +1,13 @@
+@module Object
+{
+	const char *name_of_interface();
+	Object *alloc();
+	Object *new();
+	void init();
+	void clean();
+	void delete();
+	int isKindOf(const char*);
+	int isKindOf(Object *);
+	int isInstanceOf(const char *);
+	int isInstanceOf(Object *);
+}
