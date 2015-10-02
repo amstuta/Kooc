@@ -46,6 +46,7 @@ class Kooc(Grammar, Declaration):
 
     """
     imports = []
+    types = None
 
     def __init__(self, flag=False):
         self.recurs = flag
@@ -71,7 +72,10 @@ def add_member(self, node, ast):
 
 @meta.hook(Kooc)
 def add_type(self, ast, class_name):
+    if Kooc.types == None:
+        Kooc.types = ast.ref.types
     ast.ref.types[self.value(class_name)] = None
+    Kooc.types[self.value(class_name)] = None
     return True
 
 
@@ -101,8 +105,12 @@ def add_import(self, ast, ident):
     mod_name = self.value(ident)
     if mod_name in Kooc.imports:
         return True
+    if Kooc.types == None:
+        Kooc.types = ast.ref.types
     a = Kooc(True)
     r = a.parse_file(mod_name)
+    print(Kooc.types)
+    print(ast.ref.types)
     for elem in r.body:
         if type(elem) == cnorm.nodes.Decl:
             DeclKeeper.instance().add_id(elem._name)
