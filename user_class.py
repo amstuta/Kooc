@@ -114,21 +114,29 @@ class Class:
 
 
     def add_inheritance(self):
+        if not self.ident in DeclKeeper.instance().inher:
+            return
         mom = DeclKeeper.instance().inher[self.ident]
         obj = DeclKeeper.instance().classes[mom]
 
         for mem_id in obj.members:
             mem = obj.members[mem_id]
-            ident = Mangler.instance().changeClass(mem, self.ident, mom)
+            if not isinstance(mem._ctype, cnorm.nodes.FuncType):
+                continue
+            ident = Mangler.instance().changeClass(mem_id, self.ident, mom)
             tmp = deepcopy(mem)
             tmp._name = ident
+            tmp._ctype._params[0]._ctype._identifier = self.ident
             self.members[ident] = tmp
 
         for decl_id in obj.decls:
             decl = obj.decls[decl_id]
-            ident = Mangler.instance().changeClass(decl, self.ident, mom)
+            if not isinstance(decl._ctype, cnorm.nodes.FuncType):
+                continue
+            ident = Mangler.instance().changeClass(decl_id, self.ident, mom)
             tmp = deepcopy(decl)
             tmp._name = ident
+            tmp._ctype._params[0]._ctype._identifier = self.ident
             self.decls[ident] = tmp
 
 
