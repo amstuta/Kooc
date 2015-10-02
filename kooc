@@ -26,10 +26,6 @@ class Kooc(Grammar, Declaration):
     module = ["@module" id :i Statement.compound_statement :st #add_module(st, i)]
     import = ["@import" '"' [id ".kh"] :i '"' #add_import(current_block, i)]
 
-    /*
-    implementation = ["@implementation" id :class_name Statement.compound_statement :st #add_implementation(class_name, st)]
-    */
-
     compound_statement = [
     '{'
     __scope__ :current_block #new_blockstmt(_,current_block)
@@ -37,7 +33,7 @@ class Kooc(Grammar, Declaration):
     '}'
     ]
 
-    class = ["@class" id :class_name compound_statement :st #add_class(current_block, class_name, st)]
+    class = ["@class" id :class_name #add_type(current_block, class_name) compound_statement :st #add_class(current_block, class_name, st)]
 
 
     implementation = ["@implementation" id :class_name imp_compound_st :st #add_implementation(class_name, st)]
@@ -74,6 +70,12 @@ def add_member(self, node, ast):
 
 
 @meta.hook(Kooc)
+def add_type(self, ast, class_name):
+    ast.ref.types[self.value(class_name)] = None
+    return True
+
+
+@meta.hook(Kooc)
 def add_implementation(self, class_name, statement):
     if self.recurs:
         return True
@@ -90,6 +92,7 @@ def add_class(self, ast, class_name, statement):
     DeclKeeper.instance().add_class(class_name, cl)
     tpd = cl.register_typedef()
     ast.ref.body.append(tpd)
+    ast.ref.body.extend(cl.protos)
     return True
 
 
