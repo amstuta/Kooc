@@ -33,7 +33,7 @@ class Kooc(Grammar, Declaration):
     '}'
     ]
 
-    class = ["@class" id :class_name #add_type(current_block, class_name) compound_statement :st #add_class(current_block, class_name, st)]
+    class = ["@class" id :class_name #add_type(current_block, class_name) [':' id :parent_class #add_parent(class_name, parent_class) ]? compound_statement :st #add_class(current_block, class_name, st)]
 
 
     implementation = ["@implementation" id :class_name imp_compound_st :st #add_implementation(class_name, st)]
@@ -56,6 +56,12 @@ class Kooc(Grammar, Declaration):
 @meta.hook(Kooc)
 def add_object(self, ast):
     ast.ref.types['Object'] = None
+    return True
+
+
+@meta.hook(Kooc)
+def add_parent(self, class_name, parent_name):
+    DeclKeeper.instance().inher[self.value(class_name)] = self.value(parent_name)
     return True
 
 

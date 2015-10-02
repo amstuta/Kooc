@@ -8,6 +8,7 @@ class DeclKeeper:
         self.types = {}
         self.implementations = {}
         self.classes = {}
+        self.inher = {}
 
     @staticmethod
     def instance():
