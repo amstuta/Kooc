@@ -143,9 +143,6 @@ def main():
 
     a = Kooc()
     res = a.parse_file(inFile)
-    for i in res.body:
-        if type(i) == cnorm.nodes.Decl:
-            print(Mangler.instance().muckFangle(i, "fionel"))
     moduleTransfo(res)
     fd = open(outFile, 'w+')
     fd.write(str(res.to_c()))
