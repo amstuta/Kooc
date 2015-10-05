@@ -71,22 +71,34 @@ class Class:
         if not hasattr(decl._ctype, 'fields'):
             setattr(decl._ctype, 'fields', [])
 
+        # Obj parent
         parent = None
         if 'parent' in self.members:
             parent = deepcopy(self.members['parent'])
             del self.members['parent']
             decl._ctype.fields.append(parent)
 
+        # Pointeur sur structure vtable
+        if self.vt != None:
+            pt = cnorm.nodes.PointerType()
+            decl_type = cnorm.nodes.PrimaryType('vt_%s' % self.ident)
+            setattr(decl_type, '_decltype', pt)
+            decl_vt = cnorm.nodes.Decl('vtable', decl_type)
+            decl._ctype.fields.append(decl_vt)
+
         for mem in self.members:
             if type(self.members[mem]._ctype) != cnorm.nodes.FuncType:
-                decl._ctype.fields.append(self.members[mem])
+                cpy = deepcopy(self.members[mem])
+                delattr(cpy, '_assign_expr')
+                decl._ctype.fields.append(cpy)
             else:
                 self.protos.append(self.members[mem])
         for d in self.decls:
-            item = self.decls[d]
+            item = deepcopy(self.decls[d])
             if type(item._ctype) == cnorm.nodes.FuncType:
                 self.protos.append(item)
                 continue
+            delattr(item, '_assign_expr')
             item._ctype._storage = cnorm.nodes.Storages.STATIC
             decl._ctype.fields.append(item)
         if parent != None:
