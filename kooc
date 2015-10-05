@@ -22,14 +22,14 @@ filePath = os.path.dirname(os.path.realpath(__file__))
 class Kooc(Grammar, Declaration):
     entry = 'translation_unit'
     grammar = """
-    declaration = [Declaration.declaration | module | import | implementation | class]
-    module = ["@module" #add_object(current_block) id :i Statement.compound_statement :st #add_module(st, i)]
+    declaration = [[Declaration.declaration | module | import | implementation | class] #add_object(current_block)]
+    module = ["@module" id :i Statement.compound_statement :st #add_module(st, i)]
     import = ["@import" '"' [id ".kh"] :i '"' #add_import(current_block, i)]
 
     compound_statement = [
     '{'
     __scope__ :current_block #new_blockstmt(_,current_block)
-    [ ["@member" [line_of_code | compound_statement] #add_member(_, current_block) ] | line_of_code]*
+    [ ["@member" [line_of_code | compound_statement] #add_member(_, current_block) ] | ["@virtual" [line_of_code | compound_statement] #add_virtual(_, current_block)] | line_of_code]*
     '}'
     ]
 
@@ -62,6 +62,15 @@ def add_object(self, ast):
 @meta.hook(Kooc)
 def add_parent(self, class_name, parent_name):
     DeclKeeper.instance().inher[self.value(class_name)] = self.value(parent_name)
+    return True
+
+
+@meta.hook(Kooc)
+def add_virtual(self, node, ast):
+    if not hasattr(node, 'virtuals'):
+        setattr(node, 'virtuals', [])
+    node.virtuals.append(ast.ref.body[len(ast.ref.body) - 1])
+    ast.ref.body.pop(len(ast.ref.body) - 1)
     return True
 
 
@@ -106,7 +115,10 @@ def add_class(self, ast, class_name, statement):
     class_name = self.value(class_name)
     cl = Class(class_name, statement, self.recurs)
     DeclKeeper.instance().add_class(class_name, cl)
+    tpd_vt = cl.register_typedef_vt()
     tpd = cl.register_typedef()
+    if tpd_vt != None:
+        ast.ref.body.append(tpd_vt)
     ast.ref.body.append(tpd)
     ast.ref.body.extend(cl.protos)
     return True
@@ -188,7 +200,8 @@ def main():
     a = Kooc()
     res = a.parse_file(inFile)
     add_include(res)
-    del DeclKeeper.instance().modules['Object']
+    if 'Object' in DeclKeeper.instance().modules:
+        del DeclKeeper.instance().modules['Object']
     moduleTransfo(res)
     if outFile.endswith('.h'):
         add_defines(res, outFile)

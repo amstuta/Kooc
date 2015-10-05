@@ -9,6 +9,7 @@ class Class:
         self.ident = class_name
         self.recurs = recurs
         self.protos = []
+        self.vt = None
 
         # Ajoute aux membres les fcts qui recoivent une instance de l'objet en first param
         self.check_first_param(statement)
@@ -29,6 +30,22 @@ class Class:
                     m._name = dec_m
                     self.members[dec_m] = m
 
+        # Mangling et save des virtuals
+        self.virtuals = {}
+        if hasattr(statement, 'virtuals'):
+            for v in statement.virtuals:
+                if isinstance(v, cnorm.nodes.BlockStmt):
+                    for item in v.body:
+                        self.add_self_param(item)
+                        dec_i = Mangler.instance().muckFangle(item, class_name)
+                        item._name = dec_i
+                        self.virtuals[dec_i] = item
+                else:
+                    self.add_self_param(v)
+                    dec_v = Mangler.instance().muckFangle(v, class_name)
+                    v._name = dec_v
+                    self.virtuals[dec_v] = v
+
         # Mangling et save des non membres
         self.decls = {}
         for d in statement.body:
@@ -43,7 +60,7 @@ class Class:
                 self.decls[dec_d] = d
 
         self.get_inheritance()
-        self.add_inheritance()
+        #self.add_inheritance() A supprimer
 
 
     # Ecrit le typedef struct
@@ -75,6 +92,44 @@ class Class:
         if parent != None:
             self.members['parent'] = parent
         return decl
+
+
+    def register_typedef_vt(self):
+        #for vr in self.virtuals:
+        #    item = self.virtuals[vr]
+        #    self.protos.append(item)
+        
+        if 'parent' in self.members:
+            decl = cnorm.nodes.Decl('vt_%s' % self.ident, cnorm.nodes.ComposedType('_kc_vt_%s' % self.ident))
+            decl._ctype._specifier = 1
+            decl._ctype._storage = cnorm.nodes.Storages.TYPEDEF
+            if not hasattr(decl._ctype, 'fields'):
+                setattr(decl._ctype, 'fields', [])
+
+            mom = DeclKeeper.instance().inher[self.ident]
+            if DeclKeeper.instance().classes[mom].vt != None: #Check inutile a l'avenir
+                #decl_mom = cnorm.nodes.Decl('parent', cnorm.nodes.PrimaryType('vt_%s' % mom))
+                decl_mom = DeclKeeper.instance().classes[mom].vt
+                decl._ctype.fields.extend(decl_mom)
+            
+            # Ajouter check si pas deja ds vt_mom
+            for vr in self.virtuals:
+                item = self.virtuals[vr]
+                # nom : changer ac appel a mingleSangle
+
+                ct_fct = cnorm.nodes.PrimaryType(item._ctype._identifier)
+                ct_fct._storage = 0
+                ct_fct._specifier = 0
+                ct_fct._decltype = cnorm.nodes.PointerType()
+                setattr(ct_fct._decltype, '_decltype', cnorm.nodes.ParenType(item._ctype._params))
+                setattr(ct_fct._decltype, '_identifier', item._ctype._identifier)
+
+                # vr: trouver convention de nommage pour vtable
+                fct_ptr = cnorm.nodes.Decl(vr, ct_fct)
+                decl._ctype.fields.append(fct_ptr)
+
+            self.vt = decl
+            return decl
 
 
     # Ajoute le parametre self pour les fcts membres
@@ -138,6 +193,16 @@ class Class:
             tmp._name = ident
             tmp._ctype._params[0]._ctype._identifier = self.ident
             self.decls[ident] = tmp
+
+        for vir_id in obj.virtuals:
+            vir = obj.virtuals[vir_id]
+            if not isinstance(vir._ctype, cnorm.nodes.FuncType):
+                continue
+            ident = Mangler.instance().changeClass(vir_id, self.ident, mom)
+            tmp = deepcopy(vir)
+            tmp._name = ident
+            tmp._ctype._params[0]._ctype._identifier = self.ident
+            self.virtuals[ident] = tmp
 
 
     def decl_exists(self, ident):
