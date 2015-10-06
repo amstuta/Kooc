@@ -53,6 +53,7 @@ class Mangler:
                 if par._ctype._specifier in range(4,7):
                     res += Mangler.speci[par._ctype._specifier]
                 res += '$' + par._ctype._identifier
+        return res
 
     def mimpleSangle(self, proto):
         res = ""
@@ -80,7 +81,4 @@ class Mangler:
                 if par._ctype._specifier in range(4,7):
                     res += Mangler.speci[par._ctype._specifier]
                 res += '$' + par._ctype._identifier
-
-                
-
         return res
