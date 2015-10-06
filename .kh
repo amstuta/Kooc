@@ -1,22 +1,14 @@
 typedef struct _kc_Object Object;
-
-typedef struct _kc_vt_Object
-{
-	void (*clean)();
-	int  (*isKindOf)(const char*);
-	int  (*isKindOf2)(Object*);
-	int  (*isInstanceOf)(const char*);
-	int  (*isInstanceOf2)(Object*);
-} vt_Object;
+typedef struct _kc_vt_Object vt_Object;
 
 struct _kc_Object
 {
-	vt_Object vt;
+	void *vt;
 	char *name;
 };
 
 void Func_Object_clean__void()
-{
+{	
 }
 
 int Func_Object_isKindOf__int_P_char(const char *name)
@@ -34,14 +26,6 @@ int Func_Object_isInstanceOf__int_P_char(const char *name)
 int Func_Object_isInstanceOf__int_P_Object(Object *a)
 {
 }
-
-vt_Object vtable_Object = {&Func_Object_clean__void,
-			   &Func_Object_isKindOf__int_P_char,
-			   &Func_Object_isKindOf__int_P_Object,
-			   &Func_Object_isInstanceOf__int_P_char,
-			   &Func_Object_isInstanceOf__int_P_Object
-};
-
 
 @module Object
 {

@@ -1,3 +1,5 @@
+import cnorm
+
 class DeclKeeper:
 
     _instance = None
@@ -9,6 +11,12 @@ class DeclKeeper:
         self.implementations = {}
         self.classes = {}
         self.inher = {}
+        self.vt_object = None
+        self.typedef_vt_object = None
+        self.obj_vtable = None
+        self.create_orig_vt()
+        self.create_typedef_vt()
+        self.instanciate_vtable()
 
     @staticmethod
     def instance():
@@ -17,6 +25,67 @@ class DeclKeeper:
         DeclKeeper._instance = DeclKeeper()
         return DeclKeeper._instance
 
+    
+    def create_orig_vt(self):
+        body = cnorm.nodes.BlockInit([
+            cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func_Object_clean__void')]),
+            cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func_Object_isKindOf__int_P_char')]),
+            cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func_Object_isKindOf__int_P_Object')]),
+            cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func_Object_isInstanceOf__int_P_char')]),
+            cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func_Object_isInstanceOf__int_P_Object')])
+        ])
+        decl = cnorm.nodes.Decl('vtable_Object', cnorm.nodes.PrimaryType('vt_Object'))
+        setattr(decl, '_assign_expr', body)
+        self.vt_object = decl
+
+
+    def create_typedef_vt(self):
+        decl_clean = cnorm.nodes.Decl('clean', cnorm.nodes.PrimaryType('void'))
+        setattr(decl_clean._ctype, '_decltype', cnorm.nodes.PointerType())
+        setattr(decl_clean._ctype._decltype, '_decltype', cnorm.nodes.ParenType())
+
+        decl_isKOf = cnorm.nodes.Decl('isKindOf', cnorm.nodes.PrimaryType('int'))
+        setattr(decl_isKOf._ctype, '_decltype', cnorm.nodes.PointerType())
+        setattr(decl_isKOf._ctype._decltype, '_decltype', cnorm.nodes.ParenType([cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('char'))]))
+        setattr(decl_isKOf._ctype._decltype._decltype._params[0]._ctype, '_decltype', cnorm.nodes.PointerType())
+        setattr(decl_isKOf._ctype._decltype._decltype._params[0]._ctype._decltype, '_decltype', cnorm.nodes.QualType(1))
+        
+        decl_isKOf2 = cnorm.nodes.Decl('isKindOf2', cnorm.nodes.PrimaryType('int'))
+        setattr(decl_isKOf2._ctype, '_decltype', cnorm.nodes.PointerType())
+        setattr(decl_isKOf2._ctype._decltype, '_decltype', cnorm.nodes.ParenType([cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('Object'))]))
+        setattr(decl_isKOf2._ctype._decltype._decltype._params[0]._ctype, '_decltype', cnorm.nodes.PointerType())
+
+        decl_isIOf = cnorm.nodes.Decl('isInstanceOf', cnorm.nodes.PrimaryType('int'))
+        setattr(decl_isIOf._ctype, '_decltype', cnorm.nodes.PointerType())
+        setattr(decl_isIOf._ctype._decltype, '_decltype', cnorm.nodes.ParenType([cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('char'))]))
+        setattr(decl_isIOf._ctype._decltype._decltype._params[0]._ctype, '_decltype', cnorm.nodes.PointerType())
+        setattr(decl_isIOf._ctype._decltype._decltype._params[0]._ctype._decltype, '_decltype', cnorm.nodes.QualType(1))
+
+        decl_isIOf2 = cnorm.nodes.Decl('isInstanceOf2', cnorm.nodes.PrimaryType('int'))
+        setattr(decl_isIOf2._ctype, '_decltype', cnorm.nodes.PointerType())
+        setattr(decl_isIOf2._ctype._decltype, '_decltype', cnorm.nodes.ParenType([cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('Object'))]))
+        setattr(decl_isIOf2._ctype._decltype._decltype._params[0]._ctype, '_decltype', cnorm.nodes.PointerType())
+        
+        ctype = cnorm.nodes.ComposedType('_kc_vt_Object')
+        ctype._specifier = 1
+        setattr(ctype, 'fields', [decl_clean, decl_isKOf, decl_isKOf2, decl_isIOf, decl_isIOf2])
+
+        decl = cnorm.nodes.Decl('', ctype)
+        self.typedef_vt_object = decl
+
+
+    def instanciate_vtable(self):
+        clean = cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func_Object_clean__void')])
+        isKOf = cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func_Object_isKindOf__int_P_char')])
+        isKOf2 = cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func_Object_isKindOf__int_P_Object')])
+        isIOf = cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func_Object_isInstanceOf__int_P_char')])
+        isIOf2 = cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func_Object_isInstanceOf__int_P_Object')])
+        blockInit = cnorm.nodes.BlockInit([clean, isKOf, isKOf2, isIOf, isIOf2])
+        decl = cnorm.nodes.Decl('vtable_Object', cnorm.nodes.PrimaryType('vt_Object'))
+        setattr(decl, '_assign_expr', blockInit)
+        self.obj_vtable = decl
+
+        
     def add_id(self, ident):
         self.ids.append(ident)
 

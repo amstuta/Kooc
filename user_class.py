@@ -77,14 +77,10 @@ class Class:
             parent = deepcopy(self.members['parent'])
             del self.members['parent']
             decl._ctype.fields.append(parent)
-
-        # Pointeur sur structure vtable
-        if self.vt != None:
-            pt = cnorm.nodes.PointerType()
-            decl_type = cnorm.nodes.PrimaryType('vt_%s' % self.ident)
-            setattr(decl_type, '_decltype', pt)
-            decl_vt = cnorm.nodes.Decl('vtable', decl_type)
-            decl._ctype.fields.append(decl_vt)
+        else:
+            decl_type = cnorm.nodes.PrimaryType('Object')
+            decl_obj = cnorm.nodes.Decl('parent', decl_type)
+            decl._ctype.fields.append(decl_obj)
 
         for mem in self.members:
             if type(self.members[mem]._ctype) != cnorm.nodes.FuncType:
@@ -107,10 +103,6 @@ class Class:
 
 
     def register_typedef_vt(self):
-        #for vr in self.virtuals:
-        #    item = self.virtuals[vr]
-        #    self.protos.append(item)
-        
         if 'parent' in self.members:
             decl = cnorm.nodes.Decl('vt_%s' % self.ident, cnorm.nodes.ComposedType('_kc_vt_%s' % self.ident))
             decl._ctype._specifier = 1
@@ -142,7 +134,10 @@ class Class:
 
             self.vt = decl
             return decl
-
+        
+        else:
+            self.vt = DeclKeeper.instance().obj_vtable
+            return self.vt
 
     # Ajoute le parametre self pour les fcts membres
     def add_self_param(self, decl):
