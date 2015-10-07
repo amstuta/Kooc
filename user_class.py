@@ -10,6 +10,7 @@ class Class:
         self.recurs = recurs
         self.protos = []
         self.vt = None
+        self.inst_vt = None
 
         # Ajoute aux membres les fcts qui recoivent une instance de l'objet en first param
         self.check_first_param(statement)
@@ -37,12 +38,14 @@ class Class:
                 if isinstance(v, cnorm.nodes.BlockStmt):
                     for item in v.body:
                         self.add_self_param(item)
-                        dec_i = Mangler.instance().muckFangle(item, class_name)
+                        #dec_i = Mangler.instance().muckFangle(item, class_name)
+                        dec_i = Mangler.instance().mimpleSangle(item)
                         item._name = dec_i
                         self.virtuals[dec_i] = item
                 else:
                     self.add_self_param(v)
-                    dec_v = Mangler.instance().muckFangle(v, class_name)
+                    #dec_v = Mangler.instance().muckFangle(v, class_name)
+                    dec_v = Mangler.instance().mimpleSangle(v)
                     v._name = dec_v
                     self.virtuals[dec_v] = v
 
@@ -111,10 +114,9 @@ class Class:
                 setattr(decl._ctype, 'fields', [])
 
             mom = DeclKeeper.instance().inher[self.ident]
-            if DeclKeeper.instance().classes[mom].vt != None: #Check inutile a l'avenir
-                #decl_mom = cnorm.nodes.Decl('parent', cnorm.nodes.PrimaryType('vt_%s' % mom))
+            if DeclKeeper.instance().classes[mom].vt != None:
                 decl_mom = DeclKeeper.instance().classes[mom].vt
-                decl._ctype.fields.extend(decl_mom)
+                decl._ctype.fields.extend(decl_mom._ctype.fields)
             
             # Ajouter check si pas deja ds vt_mom
             for vr in self.virtuals:
@@ -134,10 +136,31 @@ class Class:
 
             self.vt = decl
             return decl
-        
+
         else:
-            self.vt = DeclKeeper.instance().obj_vtable
-            return self.vt
+            tpd_object = DeclKeeper.instance().typedef_vt_object
+            struct = cnorm.nodes.ComposedType('_kc_vt_%s' % self.ident)
+            struct._specifier = 1
+            struct._storage = cnorm.nodes.Storages.TYPEDEF
+            setattr(struct, 'fields', tpd_object._ctype.fields)
+            decl = cnorm.nodes.Decl('vt_%s' % self.ident, struct)
+            self.vt = decl
+            return decl
+
+
+    def instanciate_vt(self):
+        m_inst_vt = None
+        if self.ident in DeclKeeper.instance().inher:
+            mom_name = DeclKeeper.instance().inher[self.ident]
+            m_inst_vt = DeclKeeper.instance().classes[mom_name].inst_vt
+        else:
+            m_inst_vt = DeclKeeper.instance().obj_vtable
+        blockInit = deepcopy(DeclKeeper.instance().obj_vtable._assign_expr)
+        decl = cnorm.nodes.Decl('vtable_%s' % self.ident, cnorm.nodes.PrimaryType('vt_%s' % self.ident))
+        setattr(decl, '_assign_expr', blockInit)
+        self.inst_vt = decl
+        return decl
+
 
     # Ajoute le parametre self pour les fcts membres
     def add_self_param(self, decl):

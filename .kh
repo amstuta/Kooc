@@ -7,25 +7,6 @@ struct _kc_Object
 	char *name;
 };
 
-void Func_Object_clean__void()
-{	
-}
-
-int Func_Object_isKindOf__int_P_char(const char *name)
-{
-}
-
-int Func_Object_isKindOf__int_P_Object(Object *a)
-{
-}
-
-int Func_Object_isInstanceOf__int_P_char(const char *name)
-{
-}
-
-int Func_Object_isInstanceOf__int_P_Object(Object *a)
-{
-}
 
 @module Object
 {
@@ -39,4 +20,28 @@ int Func_Object_isInstanceOf__int_P_Object(Object *a)
 	int isKindOf(Object *);
 	int isInstanceOf(const char *);
 	int isInstanceOf(Object *);
+}
+
+
+@implementation Object
+{
+	void clean()
+	{	
+	}
+
+	int isKindOf(const char *name)
+	{
+	}
+
+	int isKindOf(Object *a)
+	{
+	}
+
+	int isInstanceOf(const char *name)
+	{
+	}
+
+	int isInstanceOf(Object *a)
+	{
+	}
 }

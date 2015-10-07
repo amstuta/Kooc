@@ -22,7 +22,7 @@ filePath = os.path.dirname(os.path.realpath(__file__))
 class Kooc(Grammar, Declaration):
     entry = 'translation_unit'
     grammar = """
-    declaration = [[Declaration.declaration | module | import | implementation | class] #add_object(current_block)]
+    declaration = [Declaration.declaration | module | import | implementation | class]
     module = ["@module" id :i Statement.compound_statement :st #add_module(st, i)]
     import = ["@import" '"' [id ".kh"] :i '"' #add_import(current_block, i)]
 
@@ -51,12 +51,6 @@ class Kooc(Grammar, Declaration):
     def __init__(self, flag=False):
         self.recurs = flag
         super(Kooc, self).__init__()
-
-
-@meta.hook(Kooc)
-def add_object(self, ast):
-    ast.ref.types['Object'] = None
-    return True
 
 
 @meta.hook(Kooc)
@@ -117,10 +111,12 @@ def add_class(self, ast, class_name, statement):
     DeclKeeper.instance().add_class(class_name, cl)
     tpd_vt = cl.register_typedef_vt()
     tpd = cl.register_typedef()
+    inst = cl.instanciate_vt()
     if tpd_vt != None:
         ast.ref.body.append(tpd_vt)
     ast.ref.body.append(tpd)
     ast.ref.body.extend(cl.protos)
+    ast.ref.body.append(inst)
     return True
 
 
