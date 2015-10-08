@@ -113,39 +113,52 @@ class Class:
             if not hasattr(decl._ctype, 'fields'):
                 setattr(decl._ctype, 'fields', [])
 
+            # Add champs virtuals de la classe mere
             mom = DeclKeeper.instance().inher[self.ident]
             if DeclKeeper.instance().classes[mom].vt != None:
                 decl_mom = DeclKeeper.instance().classes[mom].vt
                 decl._ctype.fields.extend(decl_mom._ctype.fields)
-            
-            # Ajouter check si pas deja ds vt_mom
-            for vr in self.virtuals:
-                item = self.virtuals[vr]
-                # nom : changer ac appel a mingleSangle
-
-                ct_fct = cnorm.nodes.PrimaryType(item._ctype._identifier)
-                ct_fct._storage = 0
-                ct_fct._specifier = 0
-                ct_fct._decltype = cnorm.nodes.PointerType()
-                setattr(ct_fct._decltype, '_decltype', cnorm.nodes.ParenType(item._ctype._params))
-                setattr(ct_fct._decltype, '_identifier', item._ctype._identifier)
-
-                # vr: trouver convention de nommage pour vtable
-                fct_ptr = cnorm.nodes.Decl(vr, ct_fct)
-                decl._ctype.fields.append(fct_ptr)
-
+            self.add_self_virtuals(decl)
             self.vt = decl
             return decl
 
         else:
+
+            # Add champs virtuels de Object
             tpd_object = DeclKeeper.instance().typedef_vt_object
             struct = cnorm.nodes.ComposedType('_kc_vt_%s' % self.ident)
             struct._specifier = 1
             struct._storage = cnorm.nodes.Storages.TYPEDEF
             setattr(struct, 'fields', tpd_object._ctype.fields)
             decl = cnorm.nodes.Decl('vt_%s' % self.ident, struct)
+            self.add_self_virtuals(decl)
             self.vt = decl
             return decl
+
+
+    def add_self_virtuals(self, decl):
+        for vr in self.virtuals:
+            # Check si virtual deja ds vtable
+            # Problème: pas memes params pour mere et fille
+            # Enlever 1er param du mangling
+            if self.virtual_exists(decl._ctype.fields, vr):
+                continue
+            item = self.virtuals[vr]
+            ct_fct = cnorm.nodes.PrimaryType(item._ctype._identifier)
+            ct_fct._storage = 0
+            ct_fct._specifier = 0
+            ct_fct._decltype = cnorm.nodes.PointerType()
+            setattr(ct_fct._decltype, '_decltype', cnorm.nodes.ParenType(item._ctype._params))
+            setattr(ct_fct._decltype, '_identifier', item._ctype._identifier)
+            fct_ptr = cnorm.nodes.Decl(vr, ct_fct)
+            decl._ctype.fields.append(fct_ptr)
+
+
+    def virtual_exists(self, vlist, vname):
+        for v in vlist:
+            if v._name == vname:
+                return True
+        return False
 
 
     def instanciate_vt(self):

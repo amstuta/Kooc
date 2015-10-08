@@ -19,7 +19,7 @@ class Mangler:
 
     def changeClass(self, proto, newClassy, oldClassy):
         return proto.replace(oldClassy, newClassy)
-        
+
 
     def muckFangle(self, proto, module):
         res = ""

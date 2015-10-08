@@ -69,7 +69,10 @@ class Implementation:
 
     # Créé une fct new pour chaque init rencontré
     def create_new_fct(self, ini):
-        decl = cnorm.nodes.FuncType(self.ident, ini._ctype._params[1:])
+        params = []
+        if len(ini._ctype._params) >= 1:
+            params = ini._ctype._params[1:]
+        decl = cnorm.nodes.FuncType(self.ident, params)
         decl = cnorm.nodes.Decl('new', decl)
         decl._ctype._decltype = cnorm.nodes.PointerType()
         decl._name = Mangler.instance().muckFangle(decl, self.ident)
@@ -96,7 +99,7 @@ class Implementation:
         # Return
         ret = cnorm.nodes.Paren('()', [cnorm.nodes.Id('tmp')])
         ret = cnorm.nodes.Return(ret)
-        decl.body.body.append(ret)                
+        decl.body.body.append(ret)
         
         self.imps[decl._name] = decl
 
