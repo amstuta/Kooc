@@ -47,19 +47,19 @@ class Implementation:
         decl._name = Mangler.instance().muckFangle(decl, self.ident)
         
         # Declaration de la struct
-        dec = cnorm.nodes.Binary(cnorm.nodes.Raw('*'), [cnorm.nodes.Id(self.ident), cnorm.nodes.Id('tmp')])
+        dec = cnorm.nodes.Binary(cnorm.nodes.Raw('*'), [cnorm.nodes.Id(self.ident), cnorm.nodes.Id('self')])
         dec = cnorm.nodes.ExprStmt(dec)
         decl.body.body.append(dec)
 
         # Malloc de la struct
         sizeof = cnorm.nodes.Sizeof(cnorm.nodes.Raw('sizeof'), [cnorm.nodes.PrimaryType(self.ident)])
         func = cnorm.nodes.Func(cnorm.nodes.Id('malloc'), [sizeof])
-        binary = cnorm.nodes.Binary(cnorm.nodes.Raw('='), [cnorm.nodes.Id('tmp'), func])
+        binary = cnorm.nodes.Binary(cnorm.nodes.Raw('='), [cnorm.nodes.Id('self'), func])
         expr = cnorm.nodes.ExprStmt(binary)
         decl.body.body.append(expr)
 
         # Return
-        ret = cnorm.nodes.Paren('()', [cnorm.nodes.Id('tmp')])
+        ret = cnorm.nodes.Paren('()', [cnorm.nodes.Id('self')])
         ret = cnorm.nodes.Return(ret)
         decl.body.body.append(ret)
 
@@ -79,12 +79,12 @@ class Implementation:
         decl.body = cnorm.nodes.BlockStmt([])
 
         # Declaration de la struct
-        dec = cnorm.nodes.Binary(cnorm.nodes.Raw('*'), [cnorm.nodes.Id(self.ident), cnorm.nodes.Id('tmp')])
+        dec = cnorm.nodes.Binary(cnorm.nodes.Raw('*'), [cnorm.nodes.Id(self.ident), cnorm.nodes.Id('self')])
         dec = cnorm.nodes.ExprStmt(dec)
         decl.body.body.append(dec)
 
         # Call d'alloc
-        assign = cnorm.nodes.Binary(cnorm.nodes.Raw('='), [cnorm.nodes.Id('tmp'), cnorm.nodes.Func(cnorm.nodes.Id(self.alloc_fct._name), [])])
+        assign = cnorm.nodes.Binary(cnorm.nodes.Raw('='), [cnorm.nodes.Id('self'), cnorm.nodes.Func(cnorm.nodes.Id(self.alloc_fct._name), [])])
         assign = cnorm.nodes.ExprStmt(assign)
         decl.body.body.append(assign)
 
@@ -97,7 +97,7 @@ class Implementation:
         decl.body.body.append(call)
 
         # Return
-        ret = cnorm.nodes.Paren('()', [cnorm.nodes.Id('tmp')])
+        ret = cnorm.nodes.Paren('()', [cnorm.nodes.Id('self')])
         ret = cnorm.nodes.Return(ret)
         decl.body.body.append(ret)
         
