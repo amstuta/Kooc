@@ -18,7 +18,17 @@ class Implementation:
                 for elem in i.body:
                     ret = self.check_param(elem)
                     if ret != None:
+                        assign = None
+                        sm_name = None
+                        if hasattr(ret, 'virtual_name'):
+                            assign = self.reassign_fct_ptr(ret)
+                            sm_name = ret.virtual_name
+                            delattr(ret, 'virtual_name')
                         self.imps[ret._name] = ret
+                        if assign:
+                            self.imps[sm_name] = assign
+                            # Stocker les assigns dans une liste pour les ecrire en fin de fichier
+                        
                         if '$init$' in ret._name:
                             self.create_new_fct(ret)
                     else:
@@ -29,7 +39,16 @@ class Implementation:
             else:
                 ret = self.check_param(i)
                 if ret != None:
+                    assign = None
+                    sm_name = None
+                    if hasattr(ret, 'virtual_name'):
+                        assign = self.reassign_fct_ptr(ret)
+                        sm_name = ret.virtual_name
+                        delattr(ret, 'virtual_name')
                     self.imps[ret._name] = ret
+                    if assign:
+                        self.imps[sm_name] = assign
+                        
                     if '$init$' in ret._name:
                         self.create_new_fct(ret)
                 else:
@@ -104,6 +123,16 @@ class Implementation:
         self.imps[decl._name] = decl
 
 
+    # Reassigne le ptr dans vtable quand virtuelle mom trouvée
+    def reassign_fct_ptr(self, fct):
+        unary = cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id(fct._name)])
+        arrow = cnorm.nodes.Arrow(cnorm.nodes.Id('vtable_%s' % self.ident), [cnorm.nodes.Id(fct.virtual_name)])
+        bc = cnorm.nodes.Binary(cnorm.nodes.Raw('='), [arrow, unary])
+        exprStmt = cnorm.nodes.ExprStmt(bc)
+        
+        return exprStmt
+
+
     # Ajoute le parametre self aux parametres de la fct membre
     def check_param(self, decl):
         if isinstance(decl._ctype, cnorm.nodes.FuncType):
@@ -112,11 +141,22 @@ class Implementation:
             cl = DeclKeeper.instance().classes[self.ident]
             param = cnorm.nodes.Decl('self', cnorm.nodes.PrimaryType(self.ident))
             param._ctype._decltype = cnorm.nodes.PointerType()
+
             if decl._ctype._params != [] and decl._ctype._params[0]._ctype._identifier == self.ident:
+                sm_name = Mangler.instance().mimpleSangle(decl)
+                if sm_name in cl.virtuals:
+                    dc._name = Mangler.instance().muckFangle(dc, self.ident)
+                    setattr(dc, 'virtual_name', sm_name)
+                    return dc
                 return None
+            
             dc = deepcopy(decl)
             dc._ctype._params.insert(0, param)
+            sm_name = Mangler.instance().mimpleSangle(dc)
             dc._name = Mangler.instance().muckFangle(dc, self.ident)
             if dc._name in cl.members:
+                return dc
+            if sm_name in cl.virtuals:
+                setattr(dc, 'virtual_name', sm_name)
                 return dc
             return None
