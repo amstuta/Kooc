@@ -63,13 +63,14 @@ class Mangler:
             if type(pointerR) == cnorm.nodes.PointerType:
                 res += 'P'
             elif type(pointerR) == cnorm.nodes.ArrayType:
-                res += 'A'    
+                res += 'A'
             pointerR = pointerR._decltype
             if proto._ctype._specifier in range(4,7):
                 res += Mangler.speci[proto._ctype._specifier]
         res += '$' + proto._ctype._identifier
         if type(proto._ctype) == cnorm.nodes.FuncType:
-            for par in proto._ctype.params:
+            for idx, par in enumerate(proto._ctype.params):
+                if idx == 0: continue
                 pointer = par._ctype._decltype
                 res += '$'
                 while pointer != None:
