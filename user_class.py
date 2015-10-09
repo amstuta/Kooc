@@ -38,13 +38,11 @@ class Class:
                 if isinstance(v, cnorm.nodes.BlockStmt):
                     for item in v.body:
                         self.add_self_param(item)
-                        #dec_i = Mangler.instance().muckFangle(item, class_name)
                         dec_i = Mangler.instance().mimpleSangle(item)
                         item._name = dec_i
                         self.virtuals[dec_i] = item
                 else:
                     self.add_self_param(v)
-                    #dec_v = Mangler.instance().muckFangle(v, class_name)
                     dec_v = Mangler.instance().mimpleSangle(v)
                     v._name = dec_v
                     self.virtuals[dec_v] = v
@@ -66,11 +64,23 @@ class Class:
         #self.add_inheritance() A supprimer
 
 
-    # Ecrit le typedef struct
-    def register_typedef(self):
-        decl = cnorm.nodes.Decl(self.ident, cnorm.nodes.ComposedType('_kc_' + self.ident))
+    # Ecrit les typedefs de struct et struct vt
+    def register_typedefs(self):
+        tpd_struct = cnorm.nodes.Decl(self.ident, cnorm.nodes.ComposedType('_kc_%s' % self.ident))
+        tpd_struct._ctype._storage = cnorm.nodes.Storages.TYPEDEF
+        tpd_struct._ctype._specifier = 1
+        
+        tpd_vt = cnorm.nodes.Decl('vt_%s' % self.ident, cnorm.nodes.ComposedType('_kc_vt_%s' % self.ident))
+        tpd_vt._ctype._storage = cnorm.nodes.Storages.TYPEDEF
+        tpd_vt._ctype._specifier = 1
+
+        return [tpd_struct, tpd_vt]
+        
+
+    # Ecrit la struct de la classe
+    def register_struct(self):
+        decl = cnorm.nodes.Decl('', cnorm.nodes.ComposedType('_kc_' + self.ident))
         decl._ctype._specifier = 1
-        decl._ctype._storage = cnorm.nodes.Storages.TYPEDEF
         if not hasattr(decl._ctype, 'fields'):
             setattr(decl._ctype, 'fields', [])
 
@@ -105,11 +115,11 @@ class Class:
         return decl
 
 
-    def register_typedef_vt(self):
+    # Ecrit le struct de la vtable
+    def register_struct_vt(self):
         if 'parent' in self.members:
-            decl = cnorm.nodes.Decl('vt_%s' % self.ident, cnorm.nodes.ComposedType('_kc_vt_%s' % self.ident))
+            decl = cnorm.nodes.Decl('', cnorm.nodes.ComposedType('_kc_vt_%s' % self.ident))
             decl._ctype._specifier = 1
-            decl._ctype._storage = cnorm.nodes.Storages.TYPEDEF
             if not hasattr(decl._ctype, 'fields'):
                 setattr(decl._ctype, 'fields', [])
 
@@ -123,7 +133,6 @@ class Class:
             return decl
 
         else:
-
             # Add champs virtuels de Object
             tpd_object = DeclKeeper.instance().typedef_vt_object
             struct = cnorm.nodes.ComposedType('_kc_vt_%s' % self.ident)

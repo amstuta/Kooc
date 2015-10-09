@@ -81,6 +81,10 @@ class DeclKeeper:
         setattr(decl, '_assign_expr', blockInit)
         self.obj_vtable = decl
 
+
+    def clean_implementations(self):
+        self.implementations = {}
+
         
     def add_id(self, ident):
         self.ids.append(ident)

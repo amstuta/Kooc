@@ -109,12 +109,15 @@ def add_class(self, ast, class_name, statement):
     class_name = self.value(class_name)
     cl = Class(class_name, statement, self.recurs)
     DeclKeeper.instance().add_class(class_name, cl)
-    tpd_vt = cl.register_typedef_vt()
-    tpd = cl.register_typedef()
+
+    tpds = cl.register_typedefs()
+    vt = cl.register_struct_vt()
+    struct = cl.register_struct()
     inst = cl.instanciate_vt()
-    if tpd_vt != None:
-        ast.ref.body.append(tpd_vt)
-    ast.ref.body.append(tpd)
+    #if tpd_vt != None:
+    ast.ref.body.extend(tpds)
+    ast.ref.body.append(vt)
+    ast.ref.body.append(struct)
     ast.ref.body.extend(cl.protos)
     ast.ref.body.append(inst)
     return True
@@ -159,6 +162,7 @@ def create_header():
     res.body.append(DeclKeeper.instance().obj_vtable)
     res.body.append(cnorm.nodes.Raw('#endif\n'))
     res.body.insert(3, DeclKeeper.instance().typedef_vt_object)
+    DeclKeeper.instance().clean_implementations()
     outFile = execPath + '/.h'
     fd = open(outFile, 'w+')
     fd.write(str(res.to_c()))
