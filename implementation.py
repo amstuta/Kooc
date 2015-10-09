@@ -107,9 +107,9 @@ class Implementation:
     # Ajoute le parametre self aux parametres de la fct membre
     def check_param(self, decl):
         if isinstance(decl._ctype, cnorm.nodes.FuncType):
-            if not DeclKeeper.instance().class_exists(self.ident):
+            if not self.ident in DeclKeeper.instance().classes:
                 return None
-            cl = DeclKeeper.instance().get_class(self.ident)
+            cl = DeclKeeper.instance().classes[self.ident]
             param = cnorm.nodes.Decl('self', cnorm.nodes.PrimaryType(self.ident))
             param._ctype._decltype = cnorm.nodes.PointerType()
             if decl._ctype._params != [] and decl._ctype._params[0]._ctype._identifier == self.ident:
@@ -120,9 +120,3 @@ class Implementation:
             if dc._name in cl.members:
                 return dc
             return None
-
-
-    def __getitem__(self, ident):
-        if ident in self.imps:
-            return self.imps[ident]
-        return None

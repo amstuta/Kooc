@@ -72,7 +72,7 @@ def add_virtual(self, node, ast):
 def add_module(self, statement, ident):
     ident = self.value(ident)
     mod = Module(ident, statement, self.recurs)
-    DeclKeeper.instance().add_module(ident, mod)
+    DeclKeeper.instance().modules[ident] = mod
     return True
 
 
@@ -100,7 +100,7 @@ def add_implementation(self, class_name, statement):
         return True
     class_name = self.value(class_name)
     imp = Implementation(class_name, statement)
-    DeclKeeper.instance().add_implementation(class_name, imp)
+    DeclKeeper.instance().implementations[class_name] = imp
     return True
 
 
@@ -108,13 +108,11 @@ def add_implementation(self, class_name, statement):
 def add_class(self, ast, class_name, statement):
     class_name = self.value(class_name)
     cl = Class(class_name, statement, self.recurs)
-    DeclKeeper.instance().add_class(class_name, cl)
-
+    DeclKeeper.instance().classes[class_name] = cl
     tpds = cl.register_typedefs()
     vt = cl.register_struct_vt()
     struct = cl.register_struct()
     inst = cl.instanciate_vt()
-    #if tpd_vt != None:
     ast.ref.body.extend(tpds)
     ast.ref.body.append(vt)
     ast.ref.body.append(struct)
@@ -134,7 +132,7 @@ def add_import(self, ast, ident):
     r = a.parse_file(mod_name)
     for elem in r.body:
         if type(elem) == cnorm.nodes.Decl:
-            DeclKeeper.instance().add_id(elem._name)
+            DeclKeeper.instance().ids.append(elem._name)
     inc_name = mod_name.replace('.kh', '.h')
     inc = "#include \"%s\"\n" % inc_name
     raw = cnorm.nodes.Raw(inc)

@@ -137,9 +137,8 @@ class Class:
             tpd_object = DeclKeeper.instance().typedef_vt_object
             struct = cnorm.nodes.ComposedType('_kc_vt_%s' % self.ident)
             struct._specifier = 1
-            struct._storage = cnorm.nodes.Storages.TYPEDEF
             setattr(struct, 'fields', tpd_object._ctype.fields)
-            decl = cnorm.nodes.Decl('vt_%s' % self.ident, struct)
+            decl = cnorm.nodes.Decl('', struct)
             self.add_self_virtuals(decl)
             self.vt = decl
             return decl
@@ -148,8 +147,6 @@ class Class:
     def add_self_virtuals(self, decl):
         for vr in self.virtuals:
             # Check si virtual deja ds vtable
-            # Problème: pas memes params pour mere et fille
-            # Enlever 1er param du mangling
             if self.virtual_exists(decl._ctype.fields, vr):
                 continue
             item = self.virtuals[vr]
@@ -170,6 +167,7 @@ class Class:
         return False
 
 
+    # Instancie la vtable
     def instanciate_vt(self):
         m_inst_vt = None
         if self.ident in DeclKeeper.instance().inher:
@@ -255,24 +253,3 @@ class Class:
             tmp._name = ident
             tmp._ctype._params[0]._ctype._identifier = self.ident
             self.virtuals[ident] = tmp
-
-
-    def decl_exists(self, ident):
-        if ident in self.decls:
-            return True
-        return False
-
-    def get_decl(self, ident):
-        if self.decl_exists(ident):
-            return self.decls[ident]
-        return None
-
-    def member_exists(self, ident):
-        if ident in self.members:
-            return True
-        return False
-
-    def __getitem__(self, ident):
-        if self.member_exists(ident):
-            return self.members[ident]
-        return None

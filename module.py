@@ -19,10 +19,3 @@ class Module:
 
         # Declaration trouvee dans le fichier courrant ou non
         self.recurs = flag
-
-
-    def __getitem__(self, idx):
-        if idx in self.decls:
-            return self.decls[idx]
-        return None
-        
