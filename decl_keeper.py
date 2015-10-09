@@ -12,10 +12,8 @@ class DeclKeeper:
         self.implementations = {}
         self.classes = {}
         self.inher = {}
-        self.vt_object = None
         self.typedef_vt_object = None
         self.obj_vtable = None
-        self.create_orig_vt()
         self.create_typedef_vt()
         self.instanciate_vtable()
 
@@ -25,19 +23,6 @@ class DeclKeeper:
             return DeclKeeper._instance
         DeclKeeper._instance = DeclKeeper()
         return DeclKeeper._instance
-
-    
-    def create_orig_vt(self):
-        body = cnorm.nodes.BlockInit([
-            cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func_Object_clean__void')]),
-            cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func_Object_isKindOf__int_P_char')]),
-            cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func_Object_isKindOf__int_P_Object')]),
-            cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func_Object_isInstanceOf__int_P_char')]),
-            cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func_Object_isInstanceOf__int_P_Object')])
-        ])
-        decl = cnorm.nodes.Decl('vtable_Object', cnorm.nodes.PrimaryType('vt_Object'))
-        setattr(decl, '_assign_expr', body)
-        self.vt_object = decl
 
 
     def create_typedef_vt(self):
