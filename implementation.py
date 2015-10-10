@@ -10,55 +10,40 @@ class Implementation:
         self.alloc_fct = None
 
         self.imps = {}
+        self.virtuals = []
         if self.ident in DeclKeeper.instance().classes:
             self.create_alloc_fct()
             
         for i in imp.body:
             if isinstance(i, cnorm.nodes.BlockStmt):
                 for elem in i.body:
-                    ret = self.check_param(elem)
-                    if ret != None:
-                        assign = None
-                        sm_name = None
-                        if hasattr(ret, 'virtual_name'):
-                            assign = self.reassign_fct_ptr(ret)
-                            sm_name = ret.virtual_name
-                            delattr(ret, 'virtual_name')
-                        self.imps[ret._name] = ret
-                        if assign:
-                            self.imps[sm_name] = assign
-                            # Stocker les assigns dans une liste pour les ecrire en fin de fichier
-                        
-                        if '$init$' in ret._name:
-                            self.create_new_fct(ret)
-                    else:
-                        dec_elem = Mangler.instance().muckFangle(elem, ident)
-                        elem._name = dec_elem
-                        self.imps[dec_elem] = elem
-
+                    self.register_implementation(elem)
             else:
-                ret = self.check_param(i)
-                if ret != None:
-                    assign = None
-                    sm_name = None
-                    if hasattr(ret, 'virtual_name'):
-                        assign = self.reassign_fct_ptr(ret)
-                        sm_name = ret.virtual_name
-                        delattr(ret, 'virtual_name')
-                    self.imps[ret._name] = ret
-                    if assign:
-                        self.imps[sm_name] = assign
-                        
-                    if '$init$' in ret._name:
-                        self.create_new_fct(ret)
-                else:
-                    dec_i = Mangler.instance().muckFangle(i, ident)
-                    i._name = dec_i
-                    self.imps[dec_i] = i
+                self.register_implementation(i)
+
+
+
+    def register_implementation(self, imp):
+        ret = self.check_param(imp)
+        if ret != None:
+            assign = None
+            sm_name = None
+            if hasattr(ret, 'virtual_name'):
+                assign = self.reassign_fct_ptr(ret)
+                delattr(ret, 'virtual_name')
+            self.imps[ret._name] = ret
+            if assign:
+                self.virtuals.append(assign)
+
+            if '$init$' in ret._name:
+                self.create_new_fct(ret)
+        else:
+            dec_imp = Mangler.instance().muckFangle(imp, self.ident)
+            imp._name = dec_imp
+            self.imps[dec_imp] = imp
 
 
     def create_alloc_fct(self):
-
         decl = cnorm.nodes.FuncType(self.ident, [])
         decl = cnorm.nodes.Decl('alloc', decl)
         decl._ctype._decltype = cnorm.nodes.PointerType()

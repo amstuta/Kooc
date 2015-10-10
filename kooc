@@ -150,6 +150,7 @@ def moduleTransfo(ast):
         imp = DeclKeeper().instance().implementations[class_name]
         for i in imp.imps:
             ast.body.append(imp.imps[i])
+        ast.body.extend(imp.virtuals)
 
 
 def create_header():
