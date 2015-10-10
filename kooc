@@ -22,6 +22,12 @@ filePath = os.path.dirname(os.path.realpath(__file__))
 class Kooc(Grammar, Declaration):
     entry = 'translation_unit'
     grammar = """
+    
+    primary_expression = [ '(' expression:expr ')' #new_paren(_, expr) | [ Literal.literal | identifier ]:>_ | kooc_call #reg_kc(_,current_block)]
+    kooc_call = ['[' id_module [id :fct params_list #add_id_call(current_block, fct)]? ']']
+    id_module = [id :mod #add_id_module(current_block, mod) ['.' id :mbr #add_mbr_call(current_block, mbr)]?]
+    params_list = [[':' assignement_expression :id_param #save_param(current_block, id_param)]*]
+
     declaration = [Declaration.declaration | module | import | implementation | class]
     module = ["@module" id :i Statement.compound_statement :st #add_module(st, i)]
     import = ["@import" '"' [id ".kh"] :i '"' #add_import(current_block, i)]
@@ -51,6 +57,55 @@ class Kooc(Grammar, Declaration):
     def __init__(self, flag=False):
         self.recurs = flag
         super(Kooc, self).__init__()
+
+
+
+@meta.hook(Kooc)
+def add_id_call(self, cur_block, fct):
+    setattr(cur_block, 'call', True)
+    setattr(cur_block, 'fct', self.value(fct))
+    return True
+
+@meta.hook(Kooc)
+def reg_kc(self, ast, cur_block):
+    print('Reg_kc')
+    print(cur_block)
+    if cur_block.call == True:
+        #print('%s %s' % (cur_block.module, cur_block.fct))
+        #if hasattr(cur_block, 'params'):
+            #print(cur_block.params)
+        # Register appel resolu
+        delattr(cur_block, 'fct')
+        if hasattr(cur_block, 'params'):
+            delattr(cur_block, 'params')
+    else:
+        #print('%s %s' % (cur_block.module, cur_block.mbr))
+        delattr(cur_block, 'mbr')
+        # Register appel/var resolu
+    delattr(cur_block, 'module')
+    delattr(cur_block, 'call')
+    return True
+
+
+@meta.hook(Kooc)
+def add_mbr_call(self, cur_block, mbr):
+    setattr(cur_block, 'mbr', self.value(mbr))
+    setattr(cur_block, 'call', False)
+    return True
+
+@meta.hook(Kooc)
+def add_id_module(self, cur_block, mod):
+    setattr(cur_block, 'module', self.value(mod))
+    return True
+
+@meta.hook(Kooc)
+def save_param(self, cur_block, param):
+    if not hasattr(cur_block, 'params'):
+        setattr(cur_block, 'params', [])
+    cur_block.params.append(self.value(param))
+    return True
+
+
 
 
 @meta.hook(Kooc)
