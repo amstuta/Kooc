@@ -1,4 +1,3 @@
-
 import cnorm
 
 class Mangler:
@@ -17,6 +16,7 @@ class Mangler:
             Mangler.inst = Mangler()
         return Mangler.inst
 
+    
     def changeClass(self, proto, newClassy, oldClassy):
         return proto.replace(oldClassy, newClassy)
 
@@ -55,6 +55,7 @@ class Mangler:
                 res += '$' + par._ctype._identifier
         return res
 
+    
     def mimpleSangle(self, proto):
         res = ""
         res += proto._name + '$'
