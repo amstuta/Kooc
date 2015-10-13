@@ -8,7 +8,6 @@ class DeclKeeper:
     def __init__(self):
         self.ids = []
         self.modules = {}
-        self.types = {}
         self.implementations = {}
         self.classes = {}
         self.inher = {}
