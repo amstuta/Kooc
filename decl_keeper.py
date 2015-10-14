@@ -27,37 +27,46 @@ class DeclKeeper:
     def create_typedef_vt(self):
         decl_clean = cnorm.nodes.Decl('clean', cnorm.nodes.PrimaryType('void'))
         setattr(decl_clean._ctype, '_decltype', cnorm.nodes.PointerType())
-        setattr(decl_clean._ctype._decltype, '_decltype', cnorm.nodes.ParenType())
+        setattr(decl_clean._ctype._decltype, '_decltype', cnorm.nodes.ParenType([cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('Object'))]))
+        setattr(decl_clean._ctype._decltype._decltype._params[0]._ctype, '_decltype', cnorm.nodes.PointerType())
         name = Mangler.instance().mimpleSangle(decl_clean)
         decl_clean._name = name
 
         decl_isKOf = cnorm.nodes.Decl('isKindOf', cnorm.nodes.PrimaryType('int'))
         setattr(decl_isKOf._ctype, '_decltype', cnorm.nodes.PointerType())
-        setattr(decl_isKOf._ctype._decltype, '_decltype', cnorm.nodes.ParenType([cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('char'))]))
+        setattr(decl_isKOf._ctype._decltype, '_decltype', cnorm.nodes.ParenType([cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('Object')),
+                                                                                 cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('char'))]))
         setattr(decl_isKOf._ctype._decltype._decltype._params[0]._ctype, '_decltype', cnorm.nodes.PointerType())
-        setattr(decl_isKOf._ctype._decltype._decltype._params[0]._ctype._decltype, '_decltype', cnorm.nodes.QualType(1))
+        setattr(decl_isKOf._ctype._decltype._decltype._params[1]._ctype, '_decltype', cnorm.nodes.PointerType())
+        setattr(decl_isKOf._ctype._decltype._decltype._params[1]._ctype._decltype, '_decltype', cnorm.nodes.QualType(1))
         name = Mangler.instance().mimpleSangle(decl_isKOf)
         decl_isKOf._name = name
         
         decl_isKOf2 = cnorm.nodes.Decl('isKindOf2', cnorm.nodes.PrimaryType('int'))
         setattr(decl_isKOf2._ctype, '_decltype', cnorm.nodes.PointerType())
-        setattr(decl_isKOf2._ctype._decltype, '_decltype', cnorm.nodes.ParenType([cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('Object'))]))
+        setattr(decl_isKOf2._ctype._decltype, '_decltype', cnorm.nodes.ParenType([cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('Object')),
+                                                                                  cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('Object'))]))
         setattr(decl_isKOf2._ctype._decltype._decltype._params[0]._ctype, '_decltype', cnorm.nodes.PointerType())
+        setattr(decl_isKOf2._ctype._decltype._decltype._params[1]._ctype, '_decltype', cnorm.nodes.PointerType())
         name = Mangler.instance().mimpleSangle(decl_isKOf2)
         decl_isKOf2._name = name
 
         decl_isIOf = cnorm.nodes.Decl('isInstanceOf', cnorm.nodes.PrimaryType('int'))
         setattr(decl_isIOf._ctype, '_decltype', cnorm.nodes.PointerType())
-        setattr(decl_isIOf._ctype._decltype, '_decltype', cnorm.nodes.ParenType([cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('char'))]))
+        setattr(decl_isIOf._ctype._decltype, '_decltype', cnorm.nodes.ParenType([cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('Object')),
+                                                                                 cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('char'))]))
         setattr(decl_isIOf._ctype._decltype._decltype._params[0]._ctype, '_decltype', cnorm.nodes.PointerType())
-        setattr(decl_isIOf._ctype._decltype._decltype._params[0]._ctype._decltype, '_decltype', cnorm.nodes.QualType(1))
+        setattr(decl_isIOf._ctype._decltype._decltype._params[1]._ctype, '_decltype', cnorm.nodes.PointerType())
+        setattr(decl_isIOf._ctype._decltype._decltype._params[1]._ctype._decltype, '_decltype', cnorm.nodes.QualType(1))
         name = Mangler.instance().mimpleSangle(decl_isIOf)
         decl_isIOf._name = name
 
         decl_isIOf2 = cnorm.nodes.Decl('isInstanceOf2', cnorm.nodes.PrimaryType('int'))
         setattr(decl_isIOf2._ctype, '_decltype', cnorm.nodes.PointerType())
-        setattr(decl_isIOf2._ctype._decltype, '_decltype', cnorm.nodes.ParenType([cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('Object'))]))
+        setattr(decl_isIOf2._ctype._decltype, '_decltype', cnorm.nodes.ParenType([cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('Object')),
+                                                                                  cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('Object'))]))
         setattr(decl_isIOf2._ctype._decltype._decltype._params[0]._ctype, '_decltype', cnorm.nodes.PointerType())
+        setattr(decl_isIOf2._ctype._decltype._decltype._params[1]._ctype, '_decltype', cnorm.nodes.PointerType())
         name = Mangler.instance().mimpleSangle(decl_isIOf2)
         decl_isIOf2._name = name
         
@@ -70,11 +79,11 @@ class DeclKeeper:
 
 
     def instanciate_vtable(self):
-        clean = cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func$Object$clean$$void')])
-        isKOf = cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func$Object$isKindOf$$int$P$char')])
-        isKOf2 = cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func$Object$isKindOf$$int$P$Object')])
-        isIOf = cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func$Object$isInstanceOf$$int$P$char')])
-        isIOf2 = cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func$Object$isInstanceOf$$int$P$Object')])
+        clean = cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func$Object$clean$$void$P$Object')])
+        isKOf = cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func$Object$isKindOf$$int$P$Object$P$char')])
+        isKOf2 = cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func$Object$isKindOf$$int$P$Object$P$Object')])
+        isIOf = cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func$Object$isInstanceOf$$int$P$Object$P$char')])
+        isIOf2 = cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id('Func$Object$isInstanceOf$$int$P$Object$P$Object')])
         blockInit = cnorm.nodes.BlockInit([clean, isKOf, isKOf2, isIOf, isIOf2])
         decl = cnorm.nodes.Decl('vtable_Object', cnorm.nodes.PrimaryType('vt_Object'))
         setattr(decl, '_assign_expr', blockInit)

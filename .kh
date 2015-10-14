@@ -15,34 +15,34 @@ struct _kc_Object
 	Object *alloc();
 	Object *new();
 	void init();
-	void clean();
+	void clean(Object *);
 	void delete();
-	int isKindOf(const char*);
-	int isKindOf(Object *);
-	int isInstanceOf(const char *);
-	int isInstanceOf(Object *);
+	int isKindOf(Object *,const char*);
+	int isKindOf(Object *, Object *);
+	int isInstanceOf(Object *, const char *);
+	int isInstanceOf(Object *, Object *);
 }
 
 
 @implementation Object
 {
-	void clean()
+	void clean(Object *self)
 	{	
 	}
 
-	int isKindOf(const char *name)
+	int isKindOf(Object *self, const char *name)
 	{
 	}
 
-	int isKindOf(Object *a)
+	int isKindOf(Object *self, Object *a)
 	{
 	}
 
-	int isInstanceOf(const char *name)
+	int isInstanceOf(Object *self, const char *name)
 	{
 	}
 
-	int isInstanceOf(Object *a)
+	int isInstanceOf(Object *self, Object *a)
 	{
 	}
 }
