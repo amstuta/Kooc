@@ -4,7 +4,7 @@ import os
 import cnorm
 from user_class import *
 from module import *
-from transfo import *
+from misc import *
 from implementation import *
 from kooc_call import *
 from decl_keeper import *
@@ -161,11 +161,13 @@ def add_class(self, ast, class_name, statement):
     tpds = cl.register_typedefs()
     vt = cl.register_struct_vt()
     struct = cl.register_struct()
+    non_mbrs = cl.register_non_members()
     inst = cl.instanciate_vt()
     ast.ref.body.extend(tpds)
     ast.ref.body.append(vt)
     ast.ref.body.append(struct)
     ast.ref.body.extend(cl.protos)
+    ast.ref.body.extend(non_mbrs)
     ast.ref.body.append(inst)
     return True
 

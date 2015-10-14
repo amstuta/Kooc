@@ -1,3 +1,4 @@
+#include <stdlib.h>
 typedef struct _kc_Object Object;
 typedef struct _kc_vt_Object vt_Object;
 

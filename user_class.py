@@ -31,21 +31,17 @@ class Class:
                     m._name = dec_m
                     self.members[dec_m] = m
 
-        # Mangling et save des virtuals
+        # Save des virtuals
         self.virtuals = {}
         if hasattr(statement, 'virtuals'):
             for v in statement.virtuals:
                 if isinstance(v, cnorm.nodes.BlockStmt):
                     for item in v.body:
                         self.add_self_param(item)
-                        dec_i = Mangler.instance().mimpleSangle(item)
-                        item._name = dec_i
-                        self.virtuals[dec_i] = item
+                        self.virtuals[item._name] = item
                 else:
                     self.add_self_param(v)
-                    dec_v = Mangler.instance().mimpleSangle(v)
-                    v._name = dec_v
-                    self.virtuals[dec_v] = v
+                    self.virtuals[v._name] = v
 
         # Mangling et save des non membres
         self.decls = {}
@@ -60,8 +56,8 @@ class Class:
                 d._name = dec_d
                 self.decls[dec_d] = d
 
+        self.add_alloc_proto()
         self.get_inheritance()
-        #self.add_inheritance() A supprimer
 
 
     # Ecrit les typedefs de struct et struct vt
@@ -102,14 +98,7 @@ class Class:
                 decl._ctype.fields.append(cpy)
             else:
                 self.protos.append(self.members[mem])
-        for d in self.decls:
-            item = deepcopy(self.decls[d])
-            if type(item._ctype) == cnorm.nodes.FuncType:
-                self.protos.append(item)
-                continue
-            delattr(item, '_assign_expr')
-            item._ctype._storage = cnorm.nodes.Storages.STATIC
-            decl._ctype.fields.append(item)
+        
         if parent != None:
             self.members['parent'] = parent
         return decl
@@ -144,10 +133,29 @@ class Class:
             return decl
 
 
+    def register_non_members(self):
+        non_mbrs = []
+        for d in self.decls:
+            item = deepcopy(self.decls[d])
+            if type(item._ctype) == cnorm.nodes.FuncType:
+                self.protos.append(item)
+                continue
+            non_mbrs.append(item)
+        return non_mbrs
+
+
+    def add_alloc_proto(self):
+        ctype = cnorm.nodes.FuncType(self.ident, [], cnorm.nodes.PointerType())
+        decl = cnorm.nodes.Decl('alloc', ctype)
+        dec_n = Mangler.instance().muckFangle(decl, self.ident)
+        decl._name = dec_n
+        self.protos.append(decl)
+
+
     def add_self_virtuals(self, decl):
         for vr in self.virtuals:
-            # Check si virtual deja ds vtable
-            if self.virtual_exists(decl._ctype.fields, vr):
+            vr_name = Mangler.instance().mimpleSangle(self.virtuals[vr])
+            if self.virtual_exists(decl._ctype.fields, vr_name):
                 continue
             item = self.virtuals[vr]
             ct_fct = cnorm.nodes.PrimaryType(item._ctype._identifier)
@@ -156,7 +164,7 @@ class Class:
             ct_fct._decltype = cnorm.nodes.PointerType()
             setattr(ct_fct._decltype, '_decltype', cnorm.nodes.ParenType(item._ctype._params))
             setattr(ct_fct._decltype, '_identifier', item._ctype._identifier)
-            fct_ptr = cnorm.nodes.Decl(vr, ct_fct)
+            fct_ptr = cnorm.nodes.Decl(vr_name, ct_fct)
             decl._ctype.fields.append(fct_ptr)
 
 
@@ -176,10 +184,47 @@ class Class:
         else:
             m_inst_vt = DeclKeeper.instance().obj_vtable
         blockInit = deepcopy(DeclKeeper.instance().obj_vtable._assign_expr)
+
+        ## + voir si on peut redeclarer une fct virtual sans le mot cle
+        # Réassignation des pointeurs
+        size_b = len(blockInit.body)
+        size_v = len(self.vt._ctype.fields)
+        if size_v > size_b:
+            diff = size_v - size_b
+            for i in range(0, diff):
+                blockInit.body.append(None)
+        for vir_name in self.virtuals:
+            idx = None
+            tmp_name = Mangler.instance().mimpleSangle(self.virtuals[vir_name])
+            for index, tp in enumerate(self.vt._ctype.fields):
+                if tp._name == tmp_name:
+                    idx = index
+            if idx == None: continue
+            fct = self.virtuals[vir_name]
+            m_name = Mangler.instance().muckFangle(fct, self.ident)
+            blockInit.body[idx] = cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id(m_name)])
+
         decl = cnorm.nodes.Decl('vtable_%s' % self.ident, cnorm.nodes.PrimaryType('vt_%s' % self.ident))
         setattr(decl, '_assign_expr', blockInit)
         self.inst_vt = decl
+        self.mangle_virtuals()
         return decl
+
+
+    # Mangle les nom des prototypes de virtuals
+    # et les ajoute à la liste de protos
+    def mangle_virtuals(self):
+        new_dict = {}
+        for vir in self.virtuals:
+            m_name = Mangler.instance().muckFangle(self.virtuals[vir], self.ident)
+            v_name = Mangler.instance().mimpleSangle(self.virtuals[vir])
+            v_obj = deepcopy(self.virtuals[vir])
+            v_obj._name = v_name
+            new_dict[v_name] = v_obj
+            proto = deepcopy(v_obj)
+            proto._name = m_name
+            self.protos.append(proto)
+        self.virtuals = new_dict
 
 
     # Ajoute le parametre self pour les fcts membres
@@ -216,40 +261,3 @@ class Class:
         mom = DeclKeeper.instance().inher[self.ident]
         decl = cnorm.nodes.Decl('parent', cnorm.nodes.PrimaryType(mom))
         self.members['parent'] = decl
-
-
-    def add_inheritance(self):
-        if not self.ident in DeclKeeper.instance().inher:
-            return
-        mom = DeclKeeper.instance().inher[self.ident]
-        obj = DeclKeeper.instance().classes[mom]
-
-        for mem_id in obj.members:
-            mem = obj.members[mem_id]
-            if not isinstance(mem._ctype, cnorm.nodes.FuncType):
-                continue
-            ident = Mangler.instance().changeClass(mem_id, self.ident, mom)
-            tmp = deepcopy(mem)
-            tmp._name = ident
-            tmp._ctype._params[0]._ctype._identifier = self.ident
-            self.members[ident] = tmp
-
-        for decl_id in obj.decls:
-            decl = obj.decls[decl_id]
-            if not isinstance(decl._ctype, cnorm.nodes.FuncType):
-                continue
-            ident = Mangler.instance().changeClass(decl_id, self.ident, mom)
-            tmp = deepcopy(decl)
-            tmp._name = ident
-            tmp._ctype._params[0]._ctype._identifier = self.ident
-            self.decls[ident] = tmp
-
-        for vir_id in obj.virtuals:
-            vir = obj.virtuals[vir_id]
-            if not isinstance(vir._ctype, cnorm.nodes.FuncType):
-                continue
-            ident = Mangler.instance().changeClass(vir_id, self.ident, mom)
-            tmp = deepcopy(vir)
-            tmp._name = ident
-            tmp._ctype._params[0]._ctype._identifier = self.ident
-            self.virtuals[ident] = tmp
