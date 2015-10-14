@@ -5,10 +5,9 @@
   @virtual void get_void();
 }
 
-@class B : A
-{
-  @virtual void get_void();
-}
+// Si le fichier est un ".kh"
+#ifndef FICHIER_PARSE_H
+#define FICHIER_PARSE_H
 
 typedef struct _kc_A	A;
 typedef struct _kc_vt_A	vt_A;
@@ -35,6 +34,18 @@ struct _kc_vt_A
 char Var$A$c$char = '0';
 vt_A vtable_A = { &Func$Object$clean$$void$P$Object, &Func$Object$isKindOf$$int$P$Object$P$char, &Func$Object$isKindOf$$int$P$Object$P$Object, &Func$Object$isInstanceOf$$int$P$Object$P$char, &Func$Object$isInstanceOf$$int$P$Object$P$Object, &Func$A$get_void$$void$P$A };
 
+#endif
+
+
+
+// Si le fichier est un ".kh"
+#ifndef FICHIER_PARSE_H
+#define FICHIER_PARSE_H
+
+@class B : A
+{
+  @virtual void get_void();
+}
 
 typedef struct _kc_B	B;
 typedef struct _kc_vt_B	vt_B;
@@ -56,3 +67,5 @@ struct _kc_vt_B
 };
 
 vt_B vtable_B = { &Func$Object$clean$$void$P$Object, &Func$Object$isKindOf$$int$P$Object$P$char, &Func$Object$isKindOf$$int$P$Object$P$Object, &Func$Object$isInstanceOf$$int$P$Object$P$char, &Func$Object$isInstanceOf$$int$P$Object$P$Object, &Func$B$get_void$$void$P$B };
+
+#endif
