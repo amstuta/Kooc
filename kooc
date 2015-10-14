@@ -8,17 +8,14 @@ from transfo import *
 from implementation import *
 from kooc_call import *
 from decl_keeper import *
-from sys import argv
 from pyrser import meta
 from pyrser.grammar import Grammar
 from cnorm.parsing.statement import Statement
 from cnorm.parsing.declaration import Declaration
-from os.path import isfile
 from cnorm.passes import to_c
 
 
 execPath = os.getcwd()
-filePath = os.path.dirname(os.path.realpath(__file__))
 
 
 class Kooc(Grammar, Declaration):
@@ -190,15 +187,6 @@ def add_import(self, ast, ident):
     raw = cnorm.nodes.Raw(inc)
     ast.ref.body.append(raw)
     return True
-
-
-def write_file_out(file_name, ast):
-    fd = open(file_name, 'w+')
-    fd.write(str(ast.to_c()))
-    fd.close()
-
-def check_argv()
-
     
 
 
@@ -216,20 +204,7 @@ def create_header():
 
 
 def main():
-    if len(argv) != 2:
-        print('Only one parameter required')
-        return 1
-    inFile = execPath + '/' + argv[1]
-    outFile = ''
-    if not isfile(inFile):
-        print('Given file doesn\'t exist')
-        return 1
-    if inFile.endswith('.kc'):
-        outFile = inFile.replace('.kc', '.c')
-    elif inFile.endswith('.kh'):
-        outFile = inFile.replace('.kh', '.h')
-    else:
-        return 1
+    inFile, outFile = check_argv()
     create_header()
     a = Kooc()
     res = a.parse_file(inFile)
