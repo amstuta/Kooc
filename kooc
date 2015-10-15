@@ -16,7 +16,7 @@ from cnorm.passes import to_c
 
 
 execPath = os.getcwd()
-
+filePath = os.path.realpath(os.path.dirname(__file__))
 
 class Kooc(Grammar, Declaration):
     entry = 'translation_unit'
@@ -180,7 +180,7 @@ def add_import(self, ast, ident):
     if Kooc.types == None:
         Kooc.types = ast.ref.types
     a = Kooc(True)
-    r = a.parse_file(mod_name)
+    r = a.parse_file(filePath + '/' + mod_name)
     for elem in r.body:
         if type(elem) == cnorm.nodes.Decl:
             DeclKeeper.instance().ids.append(elem._name)
@@ -194,7 +194,7 @@ def add_import(self, ast, ident):
 
 def create_header():
     a = Kooc()
-    res = a.parse_file('.kh')
+    res = a.parse_file(filePath + '/.kh')
     res.body.insert(0, cnorm.nodes.Raw('#ifndef _H\n#define _H\n'))
     moduleTransfo(res)
     res.body.append(DeclKeeper.instance().obj_vtable)

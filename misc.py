@@ -54,4 +54,7 @@ def check_argv():
     else:
         print('Bad format for input file')
         exit(1)
+    if outFile.rfind('/') != -1:
+        outFile = outFile[outFile.rfind('/') + 1:]
+    outFile = execPath + '/' + outFile
     return inFile, outFile
