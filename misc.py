@@ -42,7 +42,7 @@ def check_argv():
     if len(argv) != 2:
         print('Only one parameter required')
         exit(1)
-    inFile = execPath + '/' + argv[1]
+    inFile = os.path.realpath(argv[1])
     outFile = ''
     if not isfile(inFile):
         print('Given file doesn\'t exist')
