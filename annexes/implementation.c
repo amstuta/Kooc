@@ -10,3 +10,4 @@
 void Func$A$get_void$$void$P$A(A *self)
 {
 }
+

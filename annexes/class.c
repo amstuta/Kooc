@@ -11,13 +11,11 @@
 
 typedef struct _kc_A	A;
 typedef struct _kc_vt_A	vt_A;
-
 struct _kc_A
 {
   Object parent;
   int Var$A$i$$int;
 };
-
 struct _kc_vt_A
 {
   // Champs de la Vtable parent (Object)
@@ -37,15 +35,15 @@ vt_A vtable_A = { &Func$Object$clean$$void$P$Object, &Func$Object$isKindOf$$int$
 #endif
 
 
-
-// Si le fichier est un ".kh"
-#ifndef FICHIER_PARSE_H
-#define FICHIER_PARSE_H
-
 @class B : A
 {
   @virtual void get_void();
 }
+
+
+// Si le fichier est un ".kh"
+#ifndef FICHIER_PARSE_H
+#define FICHIER_PARSE_H
 
 typedef struct _kc_B	B;
 typedef struct _kc_vt_B	vt_B;
