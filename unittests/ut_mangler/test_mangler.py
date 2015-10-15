@@ -14,12 +14,12 @@ class ManglerTestCase(unittest.TestCase):
                 self.mangler = None
 
         def test_complete_mangle(self):
-                print('Test Mangling complet')
+                print('\033[35mTest Mangling complet')
                 ex_decl = cnorm.nodes.Decl('i', cnorm.nodes.PrimaryType('int'))
                 self.assertEqual(self.mangler.muckFangle(ex_decl, 'A'), 'Var$A$i$$int', 'incorrect complete mangling')
 
         def test_simple_mangle(self):
-                print('Test Mangling simple')
+                print('Test Mangling simple\033[0m')
 
                 # void clean(Object*);
                 decl_clean = cnorm.nodes.Decl('clean', cnorm.nodes.PrimaryType(''))
@@ -32,4 +32,5 @@ class ManglerTestCase(unittest.TestCase):
 
 
 if __name__ == '__main__':
+        print('\033[32mTests du Mangler:\033[0m\n')
         unittest.main()
