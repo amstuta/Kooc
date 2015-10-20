@@ -5,6 +5,8 @@ sys.path.insert(0,'../../')
 import unittest
 import cnorm
 from kooc_class import *
+from decl_keeper import *
+
 
 class ModuleTestCase(unittest.TestCase):
     def setUp(self):
@@ -12,6 +14,13 @@ class ModuleTestCase(unittest.TestCase):
 
     def tearDown(self):
         pass
+
+    def moduleTransfo(self, ast):
+        for mod in DeclKeeper.instance().modules:
+            if DeclKeeper.instance().modules[mod].recurs == False:
+                for decl in DeclKeeper.instance().modules[mod].decls:
+                    ast.body.append(DeclKeeper.instance().modules[mod].decls[decl])
+
 
     def test_module_simple(self):
         decl_i = cnorm.nodes.Decl('Var$A$i$$int', cnorm.nodes.PrimaryType('int'))
@@ -23,10 +32,12 @@ class ModuleTestCase(unittest.TestCase):
         
         a = Kooc()
         res = a.parse_file('./ex_mod_1.kh')
+        self.moduleTransfo(res)
+
         for elem in res.body:
-            if elem == decl_i:
+            if elem.__dict__ == decl_i.__dict__:
                 i_found = True
-            elif elem == decl_f:
+            if elem.__dict__ == decl_f.__dict__:
                 f_found = True
 
         self.assertTrue(i_found)

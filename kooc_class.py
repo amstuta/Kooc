@@ -30,14 +30,27 @@ class Kooc(Grammar, Declaration):
     module = ["@module" id :i Statement.compound_statement :st #add_module(st, i)]
     import = ["@import" '"' [id ".kh"] :i '"' #add_import(current_block, i)]
 
+
+
+    /*
     compound_statement = [
     '{'
     __scope__ :current_block #new_blockstmt(_,current_block)
     [ ["@member" [line_of_code | compound_statement] #add_member(_, current_block) ] | ["@virtual" [line_of_code | compound_statement] #add_virtual(_, current_block)] | line_of_code]*
     '}'
     ]
-
     class = ["@class" id :class_name #add_type(current_block, class_name) [':' id :parent_class #add_parent(class_name, parent_class) ]? compound_statement :st #add_class(current_block, class_name, st)]
+    */
+
+
+
+    my_compound_statement = [
+    '{'
+    __scope__ :current_block #new_blockstmt(_,current_block)
+    [ ["@member" [c_decl | my_compound_statement] #add_member(_, current_block) ] | ["@virtual" [c_decl | my_compound_statement] #add_virtual(_, current_block)] | c_decl]*
+    '}'
+    ]
+    class = ["@class" id :class_name #add_type(current_block, class_name) [':' id :parent_class #add_parent(class_name, parent_class) ]? my_compound_statement :st #add_class(current_block, class_name, st)]
 
 
     implementation = ["@implementation" id :class_name imp_compound_st :st #add_implementation(class_name, st)]
