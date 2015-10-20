@@ -22,9 +22,10 @@ class Kooc(Grammar, Declaration):
     grammar = """
 
     primary_expression = [ '(' expression:expr ')' #new_paren(_, expr) | [ Literal.literal | identifier ]:>_ | kooc_call #add_kooc_call(_,current_block)]
-    kooc_call = ['[' id_module [id :fct params_list #add_id_call(current_block, fct)]? ']']
+    kooc_call = [ [ "@!" '(' id :type ')' #reg_type(current_block, type) ]? '[' id_module [id :fct params_list #add_id_call(current_block, fct)]? ']']
     id_module = [id :mod #add_id_module(current_block, mod) ['.' id :mbr #add_mbr_call(current_block, mbr)]?]
-    params_list = [[':' assignement_expression :id_param #save_param(current_block, id_param)]*]
+    params_list = [[':' [ '(' type_id :type ')' #reg_type_param(current_block, type) ]? assignement_expression :id_param #save_param(current_block, id_param)]*]
+    type_id = [ ['a'..'z'|'A'..'Z'|'_']['a'..'z'|'A'..'Z'|'0'..'9'|'_'|' '|'*']* ]
 
     declaration = [Declaration.declaration | module | import | implementation | class]
     module = ["@module" id :i Statement.compound_statement :st #add_module(st, i)]
@@ -44,13 +45,13 @@ class Kooc(Grammar, Declaration):
 
 
 
-    my_compound_statement = [
+    class_compound_statement = [
     '{'
     __scope__ :current_block #new_blockstmt(_,current_block)
-    [ ["@member" [c_decl | my_compound_statement] #add_member(_, current_block) ] | ["@virtual" [c_decl | my_compound_statement] #add_virtual(_, current_block)] | c_decl]*
+    [ ["@member" [c_decl | class_compound_statement] #add_member(_, current_block) ] | ["@virtual" [c_decl | class_compound_statement] #add_virtual(_, current_block)] | c_decl]*
     '}'
     ]
-    class = ["@class" id :class_name #add_type(current_block, class_name) [':' id :parent_class #add_parent(class_name, parent_class) ]? my_compound_statement :st #add_class(current_block, class_name, st)]
+    class = ["@class" id :class_name #add_type(current_block, class_name) [':' id :parent_class #add_parent(class_name, parent_class) ]? class_compound_statement :st #add_class(current_block, class_name, st)]
 
 
     implementation = ["@implementation" id :class_name imp_compound_st :st #add_implementation(class_name, st)]
@@ -76,18 +77,36 @@ def add_id_call(self, cur_block, fct):
     setattr(cur_block, 'fct', self.value(fct))
     return True
 
+
+@meta.hook(Kooc)
+def reg_type(self, cur_block, expr_type):
+    setattr(cur_block, 'expr_type', self.value(expr_type))
+    return True
+
+
+@meta.hook(Kooc)
+def reg_type_param(self, cur_block, expr_type):
+    setattr(cur_block, 'param_type', self.value(expr_type))
+    return True
+
+
 @meta.hook(Kooc)
 def add_kooc_call(self, ast, cur_block):
+    expr_type = None
+    if hasattr(cur_block, 'expr_type'):
+        expr_type = cur_block.expr_type
+        delattr(cur_block, 'expr_type')
     if cur_block.call == True:
         params = []
         if hasattr(cur_block, 'params'):
             params = cur_block.params
             delattr(cur_block, 'params')
-        ck = KoocCall(cur_block.module, cur_block.fct, params)
+        print(params)
+        ck = KoocCall(cur_block.module, cur_block.fct, expr_type, params)
         setattr(ast, 'expr', ck)
         delattr(cur_block, 'fct')
     else:
-        kc = KoocCall(cur_block.module, cur_block.mbr)
+        kc = KoocCall(cur_block.module, cur_block.mbr, expr_type)
         setattr(ast, 'expr', kc)
         delattr(cur_block, 'mbr')
     delattr(cur_block, 'module')
@@ -110,7 +129,11 @@ def add_id_module(self, cur_block, mod):
 def save_param(self, cur_block, param):
     if not hasattr(cur_block, 'params'):
         setattr(cur_block, 'params', [])
-    cur_block.params.append(self.value(param))
+    expr_type = None
+    if hasattr(cur_block, 'param_type'):
+        expr_type = cur_block.param_type
+        delattr(cur_block, 'param_type')
+    cur_block.params.append((self.value(param), expr_type))
     return True
 
 
