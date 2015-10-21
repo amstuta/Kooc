@@ -9,7 +9,7 @@ from kooc_class import *
 def create_header():
     a = Kooc()
     res = a.parse_file(filePath + '/kooc.kh')
-    res.body.insert(0, cnorm.nodes.Raw('#ifndef _H\n#define _H\n'))
+    res.body.insert(0, cnorm.nodes.Raw('#ifndef KOOC_H\n#define KOOC_H\n'))
     moduleTransfo(res)
     res.body.append(DeclKeeper.instance().obj_vtable)
     res.body.append(cnorm.nodes.Raw('#endif\n'))
