@@ -20,7 +20,7 @@ def moduleTransfo(ast):
 
 
 def add_include(ast):
-    raw = cnorm.nodes.Raw('#include \".h\"\n')
+    raw = cnorm.nodes.Raw('#include \"kooc.h\"\n')
     ast.body.insert(0, raw)
 
 
