@@ -215,7 +215,7 @@ def add_import(self, ast, ident):
     if Kooc.types == None:
         Kooc.types = ast.ref.types
     a = Kooc(True)
-    r = a.parse_file(filePath + '/' + mod_name)
+    r = a.parse_file(execPath + '/' + mod_name)
     for elem in r.body:
         if type(elem) == cnorm.nodes.Decl:
             DeclKeeper.instance().ids.append(elem._name)
