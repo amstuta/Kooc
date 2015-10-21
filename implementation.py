@@ -36,6 +36,25 @@ class Implementation:
 
 
     def create_alloc_fct(self):
+
+        d = Declaration()
+        res = d.parse("""
+        typedef struct _kc_%s %s;
+        %s *alloc()
+        {
+        %s *self;
+        self = malloc(sizeof(%s));
+        return (self);
+        }
+        """ % (self.ident, self.ident, self.ident, self.ident, self.ident))
+        
+        for decl in res.body:
+            if isinstance(decl._ctype, cnorm.nodes.FuncType):
+                decl._name = Mangler.instance().muckFangle(decl, self.ident)
+                self.alloc_fct = decl
+                self.imps[decl._name] = decl
+
+        """
         decl = cnorm.nodes.FuncType(self.ident, [])
         decl = cnorm.nodes.Decl('alloc', decl)
         decl._ctype._decltype = cnorm.nodes.PointerType()
@@ -61,6 +80,7 @@ class Implementation:
 
         self.alloc_fct = decl
         self.imps[decl._name] = decl
+        """
 
 
     # Créé une fct new pour chaque init rencontré
@@ -68,37 +88,32 @@ class Implementation:
         params = []
         if len(ini._ctype._params) >= 1:
             params = ini._ctype._params[1:]
-        decl = cnorm.nodes.FuncType(self.ident, params)
-        decl = cnorm.nodes.Decl('new', decl)
-        decl._ctype._decltype = cnorm.nodes.PointerType()
-        decl._name = Mangler.instance().muckFangle(decl, self.ident)
-        decl.body = cnorm.nodes.BlockStmt([])
-
-        # Declaration de la struct
-        dec = cnorm.nodes.Binary(cnorm.nodes.Raw('*'), [cnorm.nodes.Id(self.ident), cnorm.nodes.Id('self')])
-        dec = cnorm.nodes.ExprStmt(dec)
-        decl.body.body.append(dec)
-
-        # Call d'alloc
-        assign = cnorm.nodes.Binary(cnorm.nodes.Raw('='), [cnorm.nodes.Id('self'), cnorm.nodes.Func(cnorm.nodes.Id(self.alloc_fct._name), [])])
-        assign = cnorm.nodes.ExprStmt(assign)
-        decl.body.body.append(assign)
-
-        # Call a init
-        params = []
-        for p in ini._ctype._params:
-            params.append(cnorm.nodes.Id(p._name))
-        func = cnorm.nodes.Func(cnorm.nodes.Id(ini._name), params)
-        call = cnorm.nodes.ExprStmt(func)
-        decl.body.body.append(call)
-
-        # Return
-        ret = cnorm.nodes.Paren('()', [cnorm.nodes.Id('self')])
-        ret = cnorm.nodes.Return(ret)
-        decl.body.body.append(ret)
         
-        self.imps[decl._name] = decl
+        d = Declaration()
+        res = d.parse("""
+        typedef struct _kc_%s %s;
+        %s *new(%s)
+        {
+        %s* self;
+        self = alloc();
+        init(self, c);
+        return (self);
+        }
+        """ % (self.ident, self.ident, self.ident,
+               ', '.join([str(c.to_c()).rstrip() for c in params]).replace(';', ''),
+               self.ident))
 
+        for decl in res.body:
+            if hasattr(decl, '_name') and decl._name == 'new':
+                decl._name = Mangler.instance().muckFangle(decl, self.ident)
+                for dcl in decl.body.body:
+                    if isinstance(dcl, cnorm.nodes.ExprStmt):
+                        if isinstance(dcl.expr, cnorm.nodes.Binary):
+                            dcl.expr.params[1].call_expr.value = self.alloc_fct._name
+                        elif isinstance(dcl.expr, cnorm.nodes.Func):
+                            dcl.expr.call_expr.value = ini._name
+                self.imps[decl._name] = decl
+        
 
     # Ajoute le parametre self aux parametres de la fct membre
     def check_param(self, decl):

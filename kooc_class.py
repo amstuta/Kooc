@@ -6,14 +6,15 @@ from user_class import *
 from module import *
 from misc import *
 from implementation import *
-from kooc_call import *
 from decl_keeper import *
+from kooc_call import *
 from pyrser import meta
 from pyrser.grammar import Grammar
 from cnorm.parsing.statement import Statement
 from cnorm.parsing.declaration import Declaration
 from cnorm.passes import to_c
 
+execPath = os.getcwd()
 filePath = os.path.realpath(os.path.dirname(__file__))
 
 
@@ -219,9 +220,10 @@ def add_import(self, ast, ident):
     for elem in r.body:
         if type(elem) == cnorm.nodes.Decl:
             DeclKeeper.instance().ids.append(elem._name)
+    if not mod_name.endswith('.kh'):
+        return True
     inc_name = mod_name.replace('.kh', '.h')
     inc = "#include \"%s\"\n" % inc_name
     raw = cnorm.nodes.Raw(inc)
     ast.ref.body.append(raw)
     return True
-

@@ -1,5 +1,6 @@
 import cnorm
 from mangler import *
+from cnorm.parsing.declaration import Declaration
 
 class DeclKeeper:
 
@@ -16,6 +17,7 @@ class DeclKeeper:
         self.create_typedef_vt()
         self.instanciate_vtable()
 
+
     @staticmethod
     def instance():
         if DeclKeeper._instance:
@@ -25,6 +27,27 @@ class DeclKeeper:
 
 
     def create_typedef_vt(self):
+
+        # Problème mangling
+        d = Declaration()
+        res = d.parse(
+            '''
+            typedef struct _kc_Object Object;
+            struct _kc_vt_Object {
+            void (*clean)(Object *);
+            int (*isKindOf)(Object *, const char *);
+            int (*isKindOf)(Object *, Object *);
+            int (*isInstanceOf)(Object *, const char *);
+            int (*isInstanceOf)(Object *, Object *);
+            }; ''')
+        
+        for decl in res.body:
+            if isinstance(decl._ctype, cnorm.nodes.ComposedType) and decl._ctype._identifier == '_kc_vt_Object':
+                for dcl in decl._ctype.fields:        
+                    dcl._name = Mangler.instance().mimpleSangle(dcl)
+                self.typedef_vt_object = decl
+
+        """
         decl_clean = cnorm.nodes.Decl('clean', cnorm.nodes.PrimaryType('void'))
         setattr(decl_clean._ctype, '_decltype', cnorm.nodes.PointerType())
         setattr(decl_clean._ctype._decltype, '_decltype', cnorm.nodes.ParenType([cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('Object'))]))
@@ -75,7 +98,9 @@ class DeclKeeper:
         setattr(ctype, 'fields', [decl_clean, decl_isKOf, decl_isKOf2, decl_isIOf, decl_isIOf2])
 
         decl = cnorm.nodes.Decl('', ctype)
-        self.typedef_vt_object = decl
+        
+        #self.typedef_vt_object = decl
+        """
 
 
     def instanciate_vtable(self):
@@ -92,3 +117,7 @@ class DeclKeeper:
 
     def clean_implementations(self):
         self.implementations = {}
+
+
+
+from kooc_class import Kooc
