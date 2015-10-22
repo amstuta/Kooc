@@ -22,10 +22,28 @@ class Kooc(Grammar, Declaration):
     entry = 'translation_unit'
     grammar = """
 
-    primary_expression = [ '(' expression:expr ')' #new_paren(_, expr) | [ Literal.literal | identifier ]:>_ | kooc_call #add_kooc_call(_,current_block)]
-    kooc_call = [ [ "@!" '(' id :type ')' #reg_type(current_block, type) ]? '[' id_module [id :fct params_list #add_id_call(current_block, fct)]? ']']
+    primary_expression = [ 
+      '(' expression:expr ')' #new_paren(_, expr) 
+      | [ Literal.literal | identifier ]:>_ 
+      | kooc_call #add_kooc_call(_,current_block)
+    ]
+
+    kooc_call = [ 
+      [ "@!" '(' id :type ')' #reg_type(current_block, type) ]? 
+      '[' id_module [id :fct params_list #add_id_call(current_block, fct)]? ']'
+    ]
+
+
     id_module = [id :mod #add_id_module(current_block, mod) ['.' id :mbr #add_mbr_call(current_block, mbr)]?]
-    params_list = [[':' [ '(' type_id :type ')' #reg_type_param(current_block, type) ]? assignement_expression :id_param #save_param(current_block, id_param)]*]
+    params_list = [
+      [
+        ':' 
+        [ '(' type_id :type ')' #reg_type_param(current_block, type) ]? 
+        assignement_expression :id_param #save_param(current_block, id_param)
+      ]*
+    ]
+
+
     type_id = [ ['a'..'z'|'A'..'Z'|'_']['a'..'z'|'A'..'Z'|'0'..'9'|'_'|' '|'*']* ]
 
     declaration = [Declaration.declaration | module | import | implementation | class]
@@ -49,11 +67,19 @@ class Kooc(Grammar, Declaration):
     class_compound_statement = [
     '{'
     __scope__ :current_block #new_blockstmt(_,current_block)
-    [ ["@member" [c_decl | class_compound_statement] #add_member(_, current_block) ] | ["@virtual" [c_decl | class_compound_statement] #add_virtual(_, current_block)] | c_decl]*
+    [ 
+        ["@member" [c_decl | class_compound_statement] #add_member(_, current_block) ] 
+      | ["@virtual" [c_decl | class_compound_statement] #add_virtual(_, current_block)] 
+      | c_decl
+    ]*
     '}'
     ]
-    class = ["@class" id :class_name #add_type(current_block, class_name) [':' id :parent_class #add_parent(class_name, parent_class) ]? class_compound_statement :st #add_class(current_block, class_name, st)]
 
+    class = [
+      "@class" id :class_name #add_type(current_block, class_name) 
+      [':' id :parent_class #add_parent(class_name, parent_class) ]? 
+      class_compound_statement :st #add_class(current_block, class_name, st)
+    ]
 
     implementation = ["@implementation" id :class_name imp_compound_st :st #add_implementation(class_name, st)]
     imp_compound_st = [
