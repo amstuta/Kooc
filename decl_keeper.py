@@ -2,7 +2,6 @@ import cnorm
 import mangler
 from cnorm.parsing.declaration import Declaration
 
-
 ids = []
 modules = {}
 implementations = {}
@@ -57,6 +56,3 @@ def instanciate_vtable():
 def clean_implementations():
     global implementations
     implementations = {}
-
-
-from kooc_class import Kooc

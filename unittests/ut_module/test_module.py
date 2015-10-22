@@ -1,11 +1,16 @@
 #!/usr/bin/env python
 
 import sys
-sys.path.insert(0,'../../')
+import os
+cur_path = os.getcwd()
+exe_path = os.path.dirname(os.path.abspath(__file__))
+while not cur_path.endswith('Kooc'):
+    cur_path = cur_path[:cur_path.rfind('/')]
+sys.path.append(cur_path)
 import unittest
 import cnorm
 from kooc_class import *
-from decl_keeper import *
+import decl_keeper
 
 
 class ModuleTestCase(unittest.TestCase):
@@ -16,13 +21,20 @@ class ModuleTestCase(unittest.TestCase):
         pass
 
     def moduleTransfo(self, ast):
+        """
         for mod in DeclKeeper.instance().modules:
             if DeclKeeper.instance().modules[mod].recurs == False:
                 for decl in DeclKeeper.instance().modules[mod].decls:
                     ast.body.append(DeclKeeper.instance().modules[mod].decls[decl])
+        """
+        for mod in decl_keeper.modules:
+            if decl_keeper.modules[mod].recurs == False:
+                for decl in decl_keeper.modules[mod].decls:
+                    ast.body.append(decl_keeper.modules[mod].decls[decl])
 
 
     def test_module_simple(self):
+        print('\033[35mTest Module simple\033[0m')
         decl_i = cnorm.nodes.Decl('Var$A$i$$int', cnorm.nodes.PrimaryType('int'))
         setattr(decl_i, '_assign_expr', cnorm.nodes.Literal('1'))
         decl_f = cnorm.nodes.Decl('Func$A$f$$void', cnorm.nodes.FuncType('void', []))
@@ -31,7 +43,7 @@ class ModuleTestCase(unittest.TestCase):
         f_found = False
         
         a = Kooc()
-        res = a.parse_file('./ex_mod_1.kh')
+        res = a.parse_file(exe_path + '/ex_mod_1.kh')
         self.moduleTransfo(res)
 
         for elem in res.body:

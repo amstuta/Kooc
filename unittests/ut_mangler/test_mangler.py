@@ -1,22 +1,26 @@
 #!/usr/bin/env python
 
 import sys
-sys.path.insert(0,'../../')
+import os
+cur_path = os.getcwd()
+while not cur_path.endswith('Kooc'):
+    cur_path = cur_path[:cur_path.rfind('/')]
+sys.path.append(cur_path)
 import unittest
 import cnorm
-from mangler import *
+import mangler
 
 class ManglerTestCase(unittest.TestCase):
         def setUp(self):
-                self.mangler = Mangler.instance()
+                pass
 
         def tearDown(self):
-                self.mangler = None
+                pass
 
         def test_complete_mangle(self):
                 print('\033[35mTest Mangling complet')
                 ex_decl = cnorm.nodes.Decl('i', cnorm.nodes.PrimaryType('int'))
-                self.assertEqual(self.mangler.muckFangle(ex_decl, 'A'), 'Var$A$i$$int', 'incorrect complete mangling')
+                self.assertEqual(mangler.muckFangle(ex_decl, 'A'), 'Var$A$i$$int', 'incorrect complete mangling')
 
         def test_simple_mangle(self):
                 print('Test Mangling simple\033[0m')
@@ -26,7 +30,7 @@ class ManglerTestCase(unittest.TestCase):
                 setattr(decl_clean._ctype, '_decltype', cnorm.nodes.PointerType())
                 setattr(decl_clean._ctype._decltype, '_decltype', cnorm.nodes.ParenType([cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('Object'))]))
                 setattr(decl_clean._ctype._decltype._decltype._params[0]._ctype, '_decltype', cnorm.nodes.PointerType())
-                self.assertEqual(self.mangler.mimpleSangle(decl_clean), 'clean$P$', 'incorrect simple mangling')
+                self.assertEqual(mangler.mimpleSangle(decl_clean), 'clean$P$', 'incorrect simple mangling')
 
 
 
