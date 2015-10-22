@@ -1,5 +1,5 @@
 import cnorm
-from mangler import *
+import mangler
 from copy import deepcopy
 from decl_keeper import *
 
@@ -22,12 +22,12 @@ class Class:
                 if isinstance(m, cnorm.nodes.BlockStmt):
                     for i in m.body:
                         self.add_self_param(i)
-                        dec_i = Mangler.instance().muckFangle(i, class_name)
+                        dec_i = mangler.muckFangle(i, class_name)
                         i._name = dec_i
                         self.members[dec_i] = i
                 else:
                     self.add_self_param(m)
-                    dec_m = Mangler.instance().muckFangle(m, class_name)
+                    dec_m = mangler.muckFangle(m, class_name)
                     m._name = dec_m
                     self.members[dec_m] = m
 
@@ -48,11 +48,11 @@ class Class:
         for d in statement.body:
             if isinstance(d, cnorm.nodes.BlockStmt):
                 for i in d.body:
-                    dec_i = Mangler.instance().muckFangle(i, class_name)
+                    dec_i = mangler.muckFangle(i, class_name)
                     i._name = dec_i
                     self.decls[dec_i] = i
             else:
-                dec_d = Mangler.instance().muckFangle(d, class_name)
+                dec_d = mangler.muckFangle(d, class_name)
                 d._name = dec_d
                 self.decls[dec_d] = d
 
@@ -147,14 +147,14 @@ class Class:
     def add_alloc_proto(self):
         ctype = cnorm.nodes.FuncType(self.ident, [], cnorm.nodes.PointerType())
         decl = cnorm.nodes.Decl('alloc', ctype)
-        dec_n = Mangler.instance().muckFangle(decl, self.ident)
+        dec_n = mangler.muckFangle(decl, self.ident)
         decl._name = dec_n
         self.protos.append(decl)
 
 
     def add_self_virtuals(self, decl):
         for vr in self.virtuals:
-            vr_name = Mangler.instance().mimpleSangle(self.virtuals[vr])
+            vr_name = mangler.mimpleSangle(self.virtuals[vr])
             if self.virtual_exists(decl._ctype.fields, vr_name):
                 continue
             item = self.virtuals[vr]
@@ -195,13 +195,13 @@ class Class:
                 blockInit.body.append(None)
         for vir_name in self.virtuals:
             idx = None
-            tmp_name = Mangler.instance().mimpleSangle(self.virtuals[vir_name])
+            tmp_name = mangler.mimpleSangle(self.virtuals[vir_name])
             for index, tp in enumerate(self.vt._ctype.fields):
                 if tp._name == tmp_name:
                     idx = index
             if idx == None: continue
             fct = self.virtuals[vir_name]
-            m_name = Mangler.instance().muckFangle(fct, self.ident)
+            m_name = mangler.muckFangle(fct, self.ident)
             blockInit.body[idx] = cnorm.nodes.Unary(cnorm.nodes.Raw('&'), [cnorm.nodes.Id(m_name)])
 
         decl = cnorm.nodes.Decl('vtable_%s' % self.ident, cnorm.nodes.PrimaryType('vt_%s' % self.ident))
@@ -216,8 +216,8 @@ class Class:
     def mangle_virtuals(self):
         new_dict = {}
         for vir in self.virtuals:
-            m_name = Mangler.instance().muckFangle(self.virtuals[vir], self.ident)
-            v_name = Mangler.instance().mimpleSangle(self.virtuals[vir])
+            m_name = mangler.muckFangle(self.virtuals[vir], self.ident)
+            v_name = mangler.mimpleSangle(self.virtuals[vir])
             v_obj = deepcopy(self.virtuals[vir])
             v_obj._name = v_name
             new_dict[v_name] = v_obj

@@ -15,7 +15,7 @@ def moduleTransfo(ast):
     for class_name in DeclKeeper.instance().implementations:
         imp = DeclKeeper().instance().implementations[class_name]
         for i in imp.imps:
-            ast.body.append(imp.imps[i])
+            ast.body.append(i)
         ast.body.extend(imp.virtuals)
 
 

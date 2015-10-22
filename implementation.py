@@ -1,5 +1,5 @@
 import cnorm
-from mangler import *
+import mangler
 from decl_keeper import *
 from copy import deepcopy
 
@@ -9,7 +9,7 @@ class Implementation:
         self.ident = ident
         self.alloc_fct = None
 
-        self.imps = {}
+        self.imps = []        
         self.virtuals = []
         if self.ident in DeclKeeper.instance().classes:
             self.create_alloc_fct()
@@ -22,17 +22,16 @@ class Implementation:
                 self.register_implementation(i)
 
 
-
     def register_implementation(self, imp):
         ret = self.check_param(imp)
         if ret != None:
-            self.imps[ret._name] = ret
+            self.imps.append(ret)
+            
             if '$init$' in ret._name:
                 self.create_new_fct(ret)
         else:
-            dec_imp = Mangler.instance().muckFangle(imp, self.ident)
-            imp._name = dec_imp
-            self.imps[dec_imp] = imp
+            imp._name = mangler.muckFangle(imp, self.ident)
+            self.imps.append(imp)
 
 
     def create_alloc_fct(self):
@@ -50,9 +49,9 @@ class Implementation:
         
         for decl in res.body:
             if isinstance(decl._ctype, cnorm.nodes.FuncType):
-                decl._name = Mangler.instance().muckFangle(decl, self.ident)
+                decl._name = mangler.muckFangle(decl, self.ident)
                 self.alloc_fct = decl
-                self.imps[decl._name] = decl
+                self.imps.append(decl)
 
         """
         decl = cnorm.nodes.FuncType(self.ident, [])
@@ -105,14 +104,15 @@ class Implementation:
 
         for decl in res.body:
             if hasattr(decl, '_name') and decl._name == 'new':
-                decl._name = Mangler.instance().muckFangle(decl, self.ident)
+                #decl._name = Mangler.instance().muckFangle(decl, self.ident)
+                decl._name = mangler.muckFangle(decl, self.ident)
                 for dcl in decl.body.body:
                     if isinstance(dcl, cnorm.nodes.ExprStmt):
                         if isinstance(dcl.expr, cnorm.nodes.Binary):
                             dcl.expr.params[1].call_expr.value = self.alloc_fct._name
                         elif isinstance(dcl.expr, cnorm.nodes.Func):
                             dcl.expr.call_expr.value = ini._name
-                self.imps[decl._name] = decl
+                self.imps.append(decl)
         
 
     # Ajoute le parametre self aux parametres de la fct membre
@@ -129,8 +129,10 @@ class Implementation:
             
             dc = deepcopy(decl)
             dc._ctype._params.insert(0, param)
-            sm_name = Mangler.instance().mimpleSangle(dc)
-            dc._name = Mangler.instance().muckFangle(dc, self.ident)
+            #sm_name = Mangler.instance().mimpleSangle(dc)
+            #dc._name = Mangler.instance().muckFangle(dc, self.ident)
+            sm_name = mangler.mimpleSangle(dc)
+            dc._name = mangler.muckFangle(dc, self.ident)
             if dc._name in cl.members or sm_name in cl.virtuals:
                 return dc
             return None

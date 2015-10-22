@@ -1,4 +1,4 @@
-from mangler import *
+import mangler
 
 class Module:
     
@@ -7,7 +7,7 @@ class Module:
         # Declarations
         self.decls = {}
         for st in statement.body:
-            dec_name = Mangler.instance().muckFangle(st, ident)
+            dec_name = mangler.muckFangle(st, ident)
             st._name = dec_name
             self.decls[dec_name] = st
 
