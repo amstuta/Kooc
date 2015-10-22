@@ -2,18 +2,18 @@ import cnorm
 import os
 from os.path import isfile
 from sys import argv
-from decl_keeper import *
+import decl_keeper
 
 execPath = os.getcwd()
 
 def moduleTransfo(ast):
-    for mod in DeclKeeper.instance().modules:
-        if DeclKeeper.instance().modules[mod].recurs == False:
-            for decl in DeclKeeper.instance().modules[mod].decls:
-                ast.body.append(DeclKeeper.instance().modules[mod].decls[decl])
+    for mod in decl_keeper.modules:
+        if decl_keeper.modules[mod].recurs == False:
+            for decl in decl_keeper.modules[mod].decls:
+                ast.body.append(decl_keeper.modules[mod].decls[decl])
 
-    for class_name in DeclKeeper.instance().implementations:
-        imp = DeclKeeper().instance().implementations[class_name]
+    for class_name in decl_keeper.implementations:
+        imp = decl_keeper.implementations[class_name]
         for i in imp.imps:
             ast.body.append(i)
         ast.body.extend(imp.virtuals)

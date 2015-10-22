@@ -1,7 +1,8 @@
 import cnorm
 import mangler
-from decl_keeper import *
+import decl_keeper
 from copy import deepcopy
+from cnorm.parsing.declaration import Declaration
 
 class Implementation:
 
@@ -11,7 +12,7 @@ class Implementation:
 
         self.imps = []        
         self.virtuals = []
-        if self.ident in DeclKeeper.instance().classes:
+        if self.ident in decl_keeper.classes:
             self.create_alloc_fct()
             
         for i in imp.body:
@@ -53,34 +54,6 @@ class Implementation:
                 self.alloc_fct = decl
                 self.imps.append(decl)
 
-        """
-        decl = cnorm.nodes.FuncType(self.ident, [])
-        decl = cnorm.nodes.Decl('alloc', decl)
-        decl._ctype._decltype = cnorm.nodes.PointerType()
-        decl.body = cnorm.nodes.BlockStmt([])
-        decl._name = Mangler.instance().muckFangle(decl, self.ident)
-        
-        # Declaration de la struct
-        dec = cnorm.nodes.Binary(cnorm.nodes.Raw('*'), [cnorm.nodes.Id(self.ident), cnorm.nodes.Id('self')])
-        dec = cnorm.nodes.ExprStmt(dec)
-        decl.body.body.append(dec)
-
-        # Malloc de la struct
-        sizeof = cnorm.nodes.Sizeof(cnorm.nodes.Raw('sizeof'), [cnorm.nodes.PrimaryType(self.ident)])
-        func = cnorm.nodes.Func(cnorm.nodes.Id('malloc'), [sizeof])
-        binary = cnorm.nodes.Binary(cnorm.nodes.Raw('='), [cnorm.nodes.Id('self'), func])
-        expr = cnorm.nodes.ExprStmt(binary)
-        decl.body.body.append(expr)
-
-        # Return
-        ret = cnorm.nodes.Paren('()', [cnorm.nodes.Id('self')])
-        ret = cnorm.nodes.Return(ret)
-        decl.body.body.append(ret)
-
-        self.alloc_fct = decl
-        self.imps[decl._name] = decl
-        """
-
 
     # Créé une fct new pour chaque init rencontré
     def create_new_fct(self, ini):
@@ -104,7 +77,6 @@ class Implementation:
 
         for decl in res.body:
             if hasattr(decl, '_name') and decl._name == 'new':
-                #decl._name = Mangler.instance().muckFangle(decl, self.ident)
                 decl._name = mangler.muckFangle(decl, self.ident)
                 for dcl in decl.body.body:
                     if isinstance(dcl, cnorm.nodes.ExprStmt):
@@ -118,9 +90,9 @@ class Implementation:
     # Ajoute le parametre self aux parametres de la fct membre
     def check_param(self, decl):
         if isinstance(decl._ctype, cnorm.nodes.FuncType):
-            if not self.ident in DeclKeeper.instance().classes:
+            if not self.ident in decl_keeper.classes:
                 return None
-            cl = DeclKeeper.instance().classes[self.ident]
+            cl = decl_keeper.classes[self.ident]
             param = cnorm.nodes.Decl('self', cnorm.nodes.PrimaryType(self.ident))
             param._ctype._decltype = cnorm.nodes.PointerType()
 
@@ -129,8 +101,6 @@ class Implementation:
             
             dc = deepcopy(decl)
             dc._ctype._params.insert(0, param)
-            #sm_name = Mangler.instance().mimpleSangle(dc)
-            #dc._name = Mangler.instance().muckFangle(dc, self.ident)
             sm_name = mangler.mimpleSangle(dc)
             dc._name = mangler.muckFangle(dc, self.ident)
             if dc._name in cl.members or sm_name in cl.virtuals:

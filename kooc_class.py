@@ -6,7 +6,7 @@ from user_class import *
 from module import *
 from misc import *
 from implementation import *
-from decl_keeper import *
+import decl_keeper
 from kooc_call import *
 from pyrser import meta
 from pyrser.grammar import Grammar
@@ -166,7 +166,7 @@ def save_param(self, cur_block, param):
 
 @meta.hook(Kooc)
 def add_parent(self, class_name, parent_name):
-    DeclKeeper.instance().inher[self.value(class_name)] = self.value(parent_name)
+    decl_keeper.inher[self.value(class_name)] = self.value(parent_name)
     return True
 
 
@@ -183,7 +183,7 @@ def add_virtual(self, node, ast):
 def add_module(self, statement, ident):
     ident = self.value(ident)
     mod = Module(ident, statement, self.recurs)
-    DeclKeeper.instance().modules[ident] = mod
+    decl_keeper.modules[ident] = mod
     return True
 
 
@@ -211,7 +211,7 @@ def add_implementation(self, class_name, statement):
         return True
     class_name = self.value(class_name)
     imp = Implementation(class_name, statement)
-    DeclKeeper.instance().implementations[class_name] = imp
+    decl_keeper.implementations[class_name] = imp
     return True
 
 
@@ -219,7 +219,7 @@ def add_implementation(self, class_name, statement):
 def add_class(self, ast, class_name, statement):
     class_name = self.value(class_name)
     cl = Class(class_name, statement, self.recurs)
-    DeclKeeper.instance().classes[class_name] = cl
+    decl_keeper.classes[class_name] = cl
     tpds = cl.register_typedefs()
     vt = cl.register_struct_vt()
     struct = cl.register_struct()
@@ -245,7 +245,7 @@ def add_import(self, ast, ident):
     r = a.parse_file(execPath + '/' + mod_name)
     for elem in r.body:
         if type(elem) == cnorm.nodes.Decl:
-            DeclKeeper.instance().ids.append(elem._name)
+            decl_keeper.ids.append(elem._name)
     if not mod_name.endswith('.kh'):
         return True
     inc_name = mod_name.replace('.kh', '.h')

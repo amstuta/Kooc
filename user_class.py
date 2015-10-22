@@ -1,7 +1,7 @@
 import cnorm
 import mangler
 from copy import deepcopy
-from decl_keeper import *
+import decl_keeper
 
 class Class:
 
@@ -111,11 +111,9 @@ class Class:
             decl._ctype._specifier = 1
             if not hasattr(decl._ctype, 'fields'):
                 setattr(decl._ctype, 'fields', [])
-
-            # Add champs virtuals de la classe mere
-            mom = DeclKeeper.instance().inher[self.ident]
-            if DeclKeeper.instance().classes[mom].vt != None:
-                decl_mom = DeclKeeper.instance().classes[mom].vt
+            mom = decl_keeper.inher[self.ident]
+            if decl_keeper.classes[mom].vt != None:
+                decl_mom = decl_keeper.classes[mom].vt
                 decl._ctype.fields.extend(decl_mom._ctype.fields)
             self.add_self_virtuals(decl)
             self.vt = decl
@@ -123,7 +121,7 @@ class Class:
 
         else:
             # Add champs virtuels de Object
-            tpd_object = DeclKeeper.instance().typedef_vt_object
+            tpd_object = decl_keeper.typedef_vt_object
             struct = cnorm.nodes.ComposedType('_kc_vt_%s' % self.ident)
             struct._specifier = 1
             setattr(struct, 'fields', tpd_object._ctype.fields)
@@ -178,12 +176,12 @@ class Class:
     # Instancie la vtable
     def instanciate_vt(self):
         m_inst_vt = None
-        if self.ident in DeclKeeper.instance().inher:
-            mom_name = DeclKeeper.instance().inher[self.ident]
-            m_inst_vt = DeclKeeper.instance().classes[mom_name].inst_vt
+        if self.ident in decl_keeper.inher:
+            mom_name = decl_keeper.inher[self.ident]
+            m_inst_vt = decl_keeper.classes[mom_name].inst_vt
         else:
-            m_inst_vt = DeclKeeper.instance().obj_vtable
-        blockInit = deepcopy(DeclKeeper.instance().obj_vtable._assign_expr)
+            m_inst_vt = decl_keeper.obj_vtable
+        blockInit = deepcopy(decl_keeper.obj_vtable._assign_expr)
 
         ## + voir si on peut redeclarer une fct virtual sans le mot cle
         # Réassignation des pointeurs
@@ -256,8 +254,8 @@ class Class:
 
 
     def get_inheritance(self):
-        if not self.ident in DeclKeeper.instance().inher:
+        if not self.ident in decl_keeper.inher:
             return
-        mom = DeclKeeper.instance().inher[self.ident]
+        mom = decl_keeper.inher[self.ident]
         decl = cnorm.nodes.Decl('parent', cnorm.nodes.PrimaryType(mom))
         self.members['parent'] = decl
