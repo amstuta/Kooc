@@ -15,45 +15,67 @@ import decl_keeper
 
 class ModuleTestCase(unittest.TestCase):
     def setUp(self):
+        self.kooc = Kooc()
         pass
 
     def tearDown(self):
         pass
 
     def moduleTransfo(self, ast):
-        """
-        for mod in DeclKeeper.instance().modules:
-            if DeclKeeper.instance().modules[mod].recurs == False:
-                for decl in DeclKeeper.instance().modules[mod].decls:
-                    ast.body.append(DeclKeeper.instance().modules[mod].decls[decl])
-        """
         for mod in decl_keeper.modules:
             if decl_keeper.modules[mod].recurs == False:
                 for decl in decl_keeper.modules[mod].decls:
-                    ast.body.append(decl_keeper.modules[mod].decls[decl])
+                    ast.body.append(decl)
 
 
     def test_module_simple(self):
         print('\033[35mTest Module simple\033[0m')
-        decl_i = cnorm.nodes.Decl('Var$A$i$$int', cnorm.nodes.PrimaryType('int'))
-        setattr(decl_i, '_assign_expr', cnorm.nodes.Literal('1'))
-        decl_f = cnorm.nodes.Decl('Func$A$f$$void', cnorm.nodes.FuncType('void', []))
-
-        i_found = False
-        f_found = False
         
-        a = Kooc()
-        res = a.parse_file(exe_path + '/ex_mod_1.kh')
+        res = self.kooc.parse("""
+        @module A
+        {
+        int i = 0;
+        void f();
+        }
+        """)
+        
+        expected = """
+        int Var$A$i$$int = 0;
+        void Func$A$f$$void();
+        """
         self.moduleTransfo(res)
+        self.assertEqual(str(res.to_c()).replace(' ', '').replace('\n', ''),
+                         expected.replace(' ', '').replace('\n', ''),
+                         'Incorrect output for simple module test')
 
-        for elem in res.body:
-            if elem.__dict__ == decl_i.__dict__:
-                i_found = True
-            if elem.__dict__ == decl_f.__dict__:
-                f_found = True
 
-        self.assertTrue(i_found)
-        self.assertTrue(f_found)
+    def test_module_overload1(self):
+        res = self.kooc.parse("""
+        @module A
+        {
+        int i = 0;
+        float i = 1;
+        void *i = NULL;
+        void i(const char*);
+        int  i(float, int, char);
+        int  i(float, int);
+        }
+        """)
+
+        expected = """
+        int   Var$A$i$$int = 0;
+        float Var$A$i$$float = 1;
+        void  *Var$A$i$P$void = NULL;
+        void  Func$A$i$$void$P$char(const char *);
+        int   Func$A$i$$int$$float$$int$$char(float,int,char);
+        int   Func$A$i$$int$$float$$int(float,int);
+        """
+
+        self.moduleTransfo(res)
+        self.assertEqual(str(res.to_c()).replace(' ', '').replace('\n', ''),
+                         expected.replace(' ', '').replace('\n', ''),
+                         'Incorrect output for module overload test 1')
+
 
 
 if __name__ == '__main__':

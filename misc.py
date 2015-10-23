@@ -10,7 +10,7 @@ def moduleTransfo(ast):
     for mod in decl_keeper.modules:
         if decl_keeper.modules[mod].recurs == False:
             for decl in decl_keeper.modules[mod].decls:
-                ast.body.append(decl_keeper.modules[mod].decls[decl])
+                ast.body.append(decl)
 
     for class_name in decl_keeper.implementations:
         imp = decl_keeper.implementations[class_name]

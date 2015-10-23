@@ -1,5 +1,0 @@
-@module A
-{
-	int i = 0;
-	void f();
-}
