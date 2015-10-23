@@ -3,9 +3,10 @@ import os
 from os.path import isfile
 from sys import argv
 import decl_keeper
-from kooc_class import *
+from kooc_class import Kooc
 
 execPath = os.getcwd()
+filePath = os.path.realpath(os.path.dirname(__file__))
 
 def moduleTransfo(ast):
     for mod in decl_keeper.modules:

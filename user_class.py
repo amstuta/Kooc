@@ -94,7 +94,6 @@ class Class:
         for mem in self.members:
             if type(self.members[mem]._ctype) != cnorm.nodes.FuncType:
                 cpy = deepcopy(self.members[mem])
-                delattr(cpy, '_assign_expr')
                 decl._ctype.fields.append(cpy)
             else:
                 self.protos.append(self.members[mem])

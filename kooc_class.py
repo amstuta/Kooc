@@ -4,7 +4,6 @@ import os
 import cnorm
 from user_class import *
 from module import *
-from misc import *
 from implementation import *
 import decl_keeper
 from kooc_call import *
@@ -67,17 +66,17 @@ class Kooc(Grammar, Declaration):
     class_compound_statement = [
     '{'
     __scope__ :current_block #new_blockstmt(_,current_block)
-    [ 
-        ["@member" [c_decl | class_compound_statement] #add_member(_, current_block) ] 
-      | ["@virtual" [c_decl | class_compound_statement] #add_virtual(_, current_block)] 
+    [
+        ["@member"  [c_decl | Statement.compound_statement :st #add_block(_, st)] #add_member(_, current_block)]
+      | ["@virtual" [c_decl | Statement.compound_statement] #add_virtual(_, current_block)]
       | c_decl
     ]*
     '}'
     ]
 
     class = [
-      "@class" id :class_name #add_type(current_block, class_name) 
-      [':' id :parent_class #add_parent(class_name, parent_class) ]? 
+      "@class" id :class_name #add_type(current_block, class_name)
+      [':' id :parent_class #add_parent(class_name, parent_class) ]?
       class_compound_statement :st #add_class(current_block, class_name, st)
     ]
 
@@ -97,6 +96,13 @@ class Kooc(Grammar, Declaration):
         self.recurs = flag
         super(Kooc, self).__init__()
 
+
+
+@meta.hook(Kooc)
+def add_block(self, node, st):
+    setattr(node, 'body', [st])
+    return True
+        
 
 @meta.hook(Kooc)
 def add_id_call(self, cur_block, fct):
@@ -253,3 +259,6 @@ def add_import(self, ast, ident):
     raw = cnorm.nodes.Raw(inc)
     ast.ref.body.append(raw)
     return True
+
+
+from misc import *

@@ -2,6 +2,7 @@ import cnorm
 import mangler
 from cnorm.parsing.declaration import Declaration
 
+
 ids = []
 modules = {}
 implementations = {}
