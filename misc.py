@@ -3,6 +3,7 @@ import os
 from os.path import isfile
 from sys import argv
 import decl_keeper
+from kooc_class import *
 
 execPath = os.getcwd()
 
@@ -58,3 +59,17 @@ def check_argv():
         outFile = outFile[outFile.rfind('/') + 1:]
     outFile = execPath + '/' + outFile
     return inFile, outFile
+
+
+def create_header():
+    a = Kooc()
+    res = a.parse_file(filePath + '/kooc.kh')
+    res.body.insert(0, cnorm.nodes.Raw('#ifndef KOOC_H\n#define KOOC_H\n'))
+    moduleTransfo(res)
+    decl_keeper.create_typedef_vt()
+    res.body.append(decl_keeper.instanciate_vtable())
+    res.body.append(cnorm.nodes.Raw('#endif\n'))
+    res.body.insert(3, decl_keeper.typedef_vt_object)
+    decl_keeper.clean_implementations()
+    outFile = execPath + '/kooc.h'
+    write_file_out(outFile, res)

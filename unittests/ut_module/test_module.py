@@ -15,8 +15,8 @@ import decl_keeper
 
 class ModuleTestCase(unittest.TestCase):
     def setUp(self):
+        decl_keeper.reset()
         self.kooc = Kooc()
-        pass
 
     def tearDown(self):
         pass
@@ -29,8 +29,6 @@ class ModuleTestCase(unittest.TestCase):
 
 
     def test_module_simple(self):
-        print('\033[35mTest Module simple\033[0m')
-        
         res = self.kooc.parse("""
         @module A
         {
@@ -38,7 +36,6 @@ class ModuleTestCase(unittest.TestCase):
         void f();
         }
         """)
-        
         expected = """
         int Var$A$i$$int = 0;
         void Func$A$f$$void();
@@ -61,7 +58,6 @@ class ModuleTestCase(unittest.TestCase):
         int  i(float, int);
         }
         """)
-
         expected = """
         int   Var$A$i$$int = 0;
         float Var$A$i$$float = 1;
@@ -70,14 +66,34 @@ class ModuleTestCase(unittest.TestCase):
         int   Func$A$i$$int$$float$$int$$char(float,int,char);
         int   Func$A$i$$int$$float$$int(float,int);
         """
-
         self.moduleTransfo(res)
         self.assertEqual(str(res.to_c()).replace(' ', '').replace('\n', ''),
                          expected.replace(' ', '').replace('\n', ''),
                          'Incorrect output for module overload test 1')
 
 
-
-if __name__ == '__main__':
-    print('\033[32mTests de Module:\033[0m\n')
-    unittest.main()
+    def test_module_overload2(self):
+        res = self.kooc.parse("""
+        @module A
+        {
+        int   j = 0;
+        char *j;
+        void (*j)(int, int);
+        int  (*j)(void*, float);
+        char *j(float);
+        }
+        """)
+        expected = """
+        int  Var$A$j$$int = 0;
+        char *Var$A$j$P$char;
+        void (*Var$A$j$PFunc$$int$$int)(int,int);
+        int  (*Var$A$j$PFunc$P$void$$float)(void*,float);
+        char *Func$A$j$P$char$$void(float);
+        """
+        
+        self.moduleTransfo(res)
+        """
+        self.assertEqual(str(res.to_c()).replace(' ', '').replace('\n', ''),
+                         expected.replace(' ', '').replace('\n', ''),
+                         'Incorrect output for module overload test 2')
+        """

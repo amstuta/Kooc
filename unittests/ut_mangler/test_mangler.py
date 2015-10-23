@@ -9,32 +9,63 @@ sys.path.append(cur_path)
 import unittest
 import cnorm
 import mangler
+from kooc_class import *
+import decl_keeper
 
 class ManglerTestCase(unittest.TestCase):
+    
         def setUp(self):
-                pass
+            decl_keeper.reset()
+            self.kooc = Kooc()
 
         def tearDown(self):
-                pass
+            pass
 
-        def test_complete_mangle(self):
-                print('\033[35mTest Mangling complet')
-                ex_decl = cnorm.nodes.Decl('i', cnorm.nodes.PrimaryType('int'))
-                self.assertEqual(mangler.muckFangle(ex_decl, 'A'), 'Var$A$i$$int', 'incorrect complete mangling')
-
-        def test_simple_mangle(self):
-                print('Test Mangling simple\033[0m')
-
-                # void clean(Object*);
-                decl_clean = cnorm.nodes.Decl('clean', cnorm.nodes.PrimaryType(''))
-                setattr(decl_clean._ctype, '_decltype', cnorm.nodes.PointerType())
-                setattr(decl_clean._ctype._decltype, '_decltype', cnorm.nodes.ParenType([cnorm.nodes.Decl('', cnorm.nodes.PrimaryType('Object'))]))
-                setattr(decl_clean._ctype._decltype._decltype._params[0]._ctype, '_decltype', cnorm.nodes.PointerType())
-                self.assertEqual(mangler.mimpleSangle(decl_clean), 'clean$P$', 'incorrect simple mangling')
+        
+        def moduleTransfo(self, ast):
+            for mod in decl_keeper.modules:
+                if decl_keeper.modules[mod].recurs == False:
+                    for decl in decl_keeper.modules[mod].decls:
+                        ast.body.append(decl)
 
 
+        def test_mangle_int(self):
+            res = self.kooc.parse("@module B {int i;}")
+            self.moduleTransfo(res)
+            decl = res.body[0]
+            self.assertEqual(decl._name,
+                             'Var$B$i$$int',
+                             'Incorrect int mangling')
+
+            
+        def test_mangle_char(self):
+            res = self.kooc.parse("@module B {char c;}")
+            self.moduleTransfo(res)
+            decl = res.body[0]
+            self.assertEqual(decl._name,
+                             'Var$B$c$$char',
+                             'Incorrect char mangling')
 
 
-if __name__ == '__main__':
-        print('\033[32mTests du Mangler:\033[0m\n')
-        unittest.main()
+        def test_mangle_pointer_char(self):
+            res = self.kooc.parse("@module B {char *str;}")
+            self.moduleTransfo(res)
+            decl = res.body[0]
+            self.assertEqual(decl._name,
+                             'Var$B$str$P$char',
+                             'Incorrect char* mangling')
+
+
+        def test_mangle_function(self):
+            res = self.kooc.parse("""@module B {void *f(); int strlen(char *);}""")
+            expected = """
+            void *Func$B$f$P$void();
+            int  Func$B$strlen$$int$P$char(char*);
+            """
+            self.moduleTransfo(res)
+            self.assertEqual(str(res.to_c()).replace(' ','').replace('\n',''),
+                             expected.replace(' ','').replace('\n',''),
+                             'Incorrect function mangling')
+
+
+            

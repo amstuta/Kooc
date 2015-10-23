@@ -56,3 +56,12 @@ def instanciate_vtable():
 def clean_implementations():
     global implementations
     implementations = {}
+
+
+def reset():
+    global ids, modules, implementations, classes, inher
+    ids = []
+    modules = {}
+    implementations = {}
+    classes = {}
+    inher = {}
