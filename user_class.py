@@ -71,7 +71,7 @@ class Class:
         tpd_vt._ctype._specifier = 1
 
         return [tpd_struct, tpd_vt]
-        
+
 
     # Ecrit la struct de la classe
     def register_struct(self):
@@ -92,7 +92,7 @@ class Class:
             decl._ctype.fields.append(decl_obj)
 
         for mem in self.members:
-            if type(self.members[mem]._ctype) != cnorm.nodes.FuncType:
+            if not isinstance(self.members[mem]._ctype, cnorm.nodes.FuncType):
                 cpy = deepcopy(self.members[mem])
                 decl._ctype.fields.append(cpy)
             else:
@@ -180,12 +180,13 @@ class Class:
             m_inst_vt = decl_keeper.classes[mom_name].inst_vt
         else:
             m_inst_vt = decl_keeper.obj_vtable
-        blockInit = deepcopy(decl_keeper.obj_vtable._assign_expr)
+        blockInit = deepcopy(m_inst_vt._assign_expr)
 
         ## + voir si on peut redeclarer une fct virtual sans le mot cle
         # Réassignation des pointeurs
         size_b = len(blockInit.body)
         size_v = len(self.vt._ctype.fields)
+        
         if size_v > size_b:
             diff = size_v - size_b
             for i in range(0, diff):
@@ -203,6 +204,7 @@ class Class:
 
         decl = cnorm.nodes.Decl('vtable_%s' % self.ident, cnorm.nodes.PrimaryType('vt_%s' % self.ident))
         setattr(decl, '_assign_expr', blockInit)
+        
         self.inst_vt = decl
         self.mangle_virtuals()
         return decl
