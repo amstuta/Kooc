@@ -79,6 +79,7 @@ class Class:
             setattr(decl._ctype, 'fields', [])
 
         # Obj parent
+        parent = None
         if self.has_parent():
             parent = deepcopy(self.members[0])
             del self.members[0]
