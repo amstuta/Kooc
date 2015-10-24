@@ -16,20 +16,18 @@ class Class:
         self.check_first_param(statement)
 
         # Mangling des save des membres
-        self.members = {}
+        self.members = []
         if hasattr(statement, 'members'):
             for m in statement.members:
                 if isinstance(m, cnorm.nodes.BlockStmt):
                     for i in m.body:
                         self.add_self_param(i)
-                        dec_i = mangler.muckFangle(i, class_name)
-                        i._name = dec_i
-                        self.members[dec_i] = i
+                        i._name = mangler.muckFangle(i, class_name)
+                        self.members.append(i)
                 else:
                     self.add_self_param(m)
-                    dec_m = mangler.muckFangle(m, class_name)
-                    m._name = dec_m
-                    self.members[dec_m] = m
+                    m._name = mangler.muckFangle(m, class_name)
+                    self.members.append(m)
 
         # Save des virtuals
         self.virtuals = {}
@@ -81,10 +79,9 @@ class Class:
             setattr(decl._ctype, 'fields', [])
 
         # Obj parent
-        parent = None
-        if 'parent' in self.members:
-            parent = deepcopy(self.members['parent'])
-            del self.members['parent']
+        if self.has_parent():
+            parent = deepcopy(self.members[0])
+            del self.members[0]
             decl._ctype.fields.append(parent)
         else:
             decl_type = cnorm.nodes.PrimaryType('Object')
@@ -92,20 +89,20 @@ class Class:
             decl._ctype.fields.append(decl_obj)
 
         for mem in self.members:
-            if not isinstance(self.members[mem]._ctype, cnorm.nodes.FuncType):
-                cpy = deepcopy(self.members[mem])
+            if not isinstance(mem._ctype, cnorm.nodes.FuncType):
+                cpy = deepcopy(mem)
                 decl._ctype.fields.append(cpy)
             else:
-                self.protos.append(self.members[mem])
+                self.protos.append(mem)
         
         if parent != None:
-            self.members['parent'] = parent
+            self.members.insert(0, parent)
         return decl
 
 
     # Ecrit le struct de la vtable
     def register_struct_vt(self):
-        if 'parent' in self.members:
+        if self.has_parent():
             decl = cnorm.nodes.Decl('', cnorm.nodes.ComposedType('_kc_vt_%s' % self.ident))
             decl._ctype._specifier = 1
             if not hasattr(decl._ctype, 'fields'):
@@ -259,4 +256,10 @@ class Class:
             return
         mom = decl_keeper.inher[self.ident]
         decl = cnorm.nodes.Decl('parent', cnorm.nodes.PrimaryType(mom))
-        self.members['parent'] = decl
+        self.members.insert(0, decl)
+
+
+    def has_parent(self):
+        if self.members != [] and self.members[0]._name == 'parent':
+            return True
+        return False

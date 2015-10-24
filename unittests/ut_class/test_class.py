@@ -20,15 +20,16 @@ class ClassTestCase(unittest.TestCase):
         
     def test_typedef_class(self):
         res = self.kooc.parse(""" @class A {} """)
-        expected = """typedef struct  _kc_A A;"""
+        expected = "typedef struct _kc_A A;"
         for decl in res.body:
             if hasattr(decl, '_name') and decl._name == 'A':
                 self.assertEqual(str(decl.to_c()).replace(" ", "").replace("\n", ""),
                                  expected.replace(' ','').replace('\n',''),
                                  'Fail test typedef class')
+                break
 
 
-    def test_empty_class(self):
+    def test_empty_class_struct(self):
         res = self.kooc.parse("""@class A {}""")
         expected = """
         struct _kc_A {
@@ -36,19 +37,37 @@ class ClassTestCase(unittest.TestCase):
         };
         """
         for decl in res.body:
-            if hasattr(decl, '_name') and decl._ctype._identifier == '_kc_A':
+            if hasattr(decl, '_name') and decl._ctype._identifier == '_kc_A' \
+               and decl._ctype._storage == cnorm.nodes.Storages.AUTO:
                 self.assertEqual(str(decl.to_c()).replace(' ','').replace('\n',''),
                                  expected.replace(' ','').replace('\n',''),
-                                 'Fail test empty class')
+                                 'Fail test empty class: struct')
                 
 
-    def test_member_class(self):
+    def test_member_class_struct(self):
         res = self.kooc.parse(""" 
         @class A 
         {
         @member int i;
         @member float i;
-        @member void *get_void();
         } 
         """)
-        expected = """typedef struct {}"""
+        expected = """struct _kc_A {
+        Object parent;
+        int Var$A$i$$int;
+        float Var$A$i$$float;
+        };"""
+        for decl in res.body:
+            if hasattr(decl, '_name') and decl._ctype._identifier == '_kc_A' \
+               and decl._ctype._storage == cnorm.nodes.Storages.AUTO:
+                self.assertEqual(str(decl.to_c()).replace(' ','').replace('\n',''),
+                                 expected.replace(' ','').replace('\n',''),
+                                 'Fail test member class: struct')
+
+
+
+
+
+
+
+        
