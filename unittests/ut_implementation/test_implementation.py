@@ -2,11 +2,8 @@
 
 import sys
 import os
-cur_path = os.getcwd()
-exe_path = os.path.dirname(os.path.abspath(__file__))
-while not cur_path.endswith('Kooc'):
-    cur_path = cur_path[:cur_path.rfind('/')]
-sys.path.append(cur_path)
+filePath = os.path.realpath(os.path.dirname(__file__))
+sys.path.append(filePath + '/../..')
 import unittest
 import cnorm
 from kooc_class import *
@@ -16,22 +13,21 @@ import decl_keeper
 class ImplementationTestCase(unittest.TestCase):
     def setUp(self):
         self.kooc = Kooc()
-        pass
+        decl_keeper.reset()
 
     def tearDown(self):
         pass
 
     def moduleTransfo(self, ast):
-
         for class_name in decl_keeper.implementations:
             imp = decl_keeper.implementations[class_name]
             for i in imp.imps:
                 ast.body.append(i)
             ast.body.extend(imp.virtuals)
+        decl_keeper.clean_implementations()
 
 
     def test_implementation_simple(self):
-
         res = self.kooc.parse("""
         @implementation Test
         {
@@ -72,6 +68,28 @@ class ImplementationTestCase(unittest.TestCase):
                          'Incorrect output for simple implementation test')
 
 
-if __name__ == '__main__':
-    print('\033[32mTests de implementation:\033[0m\n')
-    unittest.main()
+    def test_implementation_second(self):
+        res = self.kooc.parse("""
+        @implementation A {
+        void f() {}
+        void f(int a, float b) {}
+        char *f() {}
+        }
+        @implementation B {
+        void f() {}
+        void f(int a, float b) {}
+        char *f() {}
+        }
+        """)
+        expected = """
+        void Func$A$f$$void() {}
+        void Func$A$f$$void$$int$$float(int a, float b) {}
+        char *Func$A$f$P$char() {}
+        void Func$B$f$$void() {}
+        void Func$B$f$$void$$int$$float(int a, float b) {}
+        char *Func$B$f$P$char() {}
+        """
+        self.moduleTransfo(res)
+        self.assertEqual(str(res.to_c()).replace(' ','').replace('\n',''),
+                         expected.replace(' ','').replace('\n',''),
+                         'Incorrect output for second implementation test')

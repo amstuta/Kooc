@@ -10,7 +10,7 @@ class Implementation:
         self.ident = ident
         self.alloc_fct = None
 
-        self.imps = []        
+        self.imps = []
         self.virtuals = []
         if self.ident in decl_keeper.classes:
             self.create_alloc_fct()
@@ -27,7 +27,6 @@ class Implementation:
         ret = self.check_param(imp)
         if ret != None:
             self.imps.append(ret)
-            
             if '$init$' in ret._name:
                 self.create_new_fct(ret)
         else:
@@ -103,6 +102,9 @@ class Implementation:
             dc._ctype._params.insert(0, param)
             sm_name = mangler.mimpleSangle(dc)
             dc._name = mangler.muckFangle(dc, self.ident)
-            if dc._name in cl.members or sm_name in cl.virtuals:
+            for dcl in cl.members:
+                if dcl._name == dc._name:
+                    return dc
+            if sm_name in cl.virtuals:
                 return dc
             return None

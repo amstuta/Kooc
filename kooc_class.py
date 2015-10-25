@@ -217,7 +217,7 @@ def add_implementation(self, class_name, statement):
         return True
     class_name = self.value(class_name)
     imp = Implementation(class_name, statement)
-    decl_keeper.implementations[class_name] = imp
+    decl_keeper.implementations.append(imp)
     return True
 
 

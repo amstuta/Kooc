@@ -14,8 +14,14 @@ def moduleTransfo(ast):
             for decl in decl_keeper.modules[mod].decls:
                 ast.body.append(decl)
 
+    """
     for class_name in decl_keeper.implementations:
         imp = decl_keeper.implementations[class_name]
+        for i in imp.imps:
+            ast.body.append(i)
+        ast.body.extend(imp.virtuals)
+    """
+    for imp in decl_keeper.implementations:
         for i in imp.imps:
             ast.body.append(i)
         ast.body.extend(imp.virtuals)

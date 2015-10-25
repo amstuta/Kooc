@@ -5,7 +5,7 @@ from cnorm.parsing.declaration import Declaration
 
 ids = []
 modules = {}
-implementations = {}
+implementations = []
 classes = {}
 inher = {}
 typedef_vt_object = None
@@ -37,32 +37,32 @@ def create_typedef_vt():
 
 
 def instanciate_vtable():
+    global implementations
     d = Declaration()
     res = d.parse("""
     typedef struct _kc_Object Object;
     typedef struct _kc_vt_Object vt_Object;
     vt_Object vtable_Object = {&clean, &isKindOf, &isKindOf, &isInstanceOf, &isInstanceOf};
     """)
-
     for decl in res.body:
         if hasattr(decl, '_name') and decl._name == 'vtable_Object':
-            for (elem, imp) in zip(decl._assign_expr.body, implementations['Object'].imps):
+            for (elem, imp) in zip(decl._assign_expr.body, implementations[0].imps):
                 elem.params[0].value = imp._name
             global obj_vtable
             obj_vtable = decl
             return decl
     return None
-        
+
 
 def clean_implementations():
     global implementations
-    implementations = {}
+    implementations = []
 
 
 def reset():
     global ids, modules, implementations, classes, inher
     ids = []
     modules = {}
-    implementations = {}
+    implementations = []
     classes = {}
     inher = {}

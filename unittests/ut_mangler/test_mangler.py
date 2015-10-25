@@ -2,10 +2,8 @@
 
 import sys
 import os
-cur_path = os.getcwd()
-while not cur_path.endswith('Kooc'):
-    cur_path = cur_path[:cur_path.rfind('/')]
-sys.path.append(cur_path)
+filePath = os.path.realpath(os.path.dirname(__file__))
+sys.path.append(filePath + '/../..')
 import unittest
 import cnorm
 import mangler
