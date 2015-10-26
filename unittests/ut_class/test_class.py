@@ -163,3 +163,48 @@ class ClassTestCase(unittest.TestCase):
                                  expected.replace(' ','').replace('\n',''),
                                  'Fail test vtable instanciation full')
 
+
+
+    def test_class_full(self):
+        res = self.kooc.parse("""
+        @class A
+        {
+        @member int i;
+        void  f();
+        float f(int);
+        @virtual int get_int();
+        }
+        """)
+        expected = """
+        typedef struct _kc_A A;
+        typedef struct _kc_vt_A vt_A;
+        
+        struct _kc_vt_A
+        {
+        void (*clean$P$void)(Object *);
+        int (*isKindOf$P$int)(Object *, const char *);
+        int (*isKindOf$P$int)(Object *, Object *);
+        int (*isInstanceOf$P$int)(Object *, const char *);
+        int (*isInstanceOf$P$int)(Object *, Object *);
+        int (*get_int$$int)(A *self);
+        };
+        struct _kc_A
+        {
+        Object  parent;
+        int     Var$A$i$$int;
+        };
+        A     *Func$A$alloc$P$A();
+        void  Func$A$f$$void();
+        float Func$A$f$$float$$int(int);
+        int   Func$A$get_int$$int$P$A(A *self);
+
+       vt_A vtable_A = { &Func$Object$clean$$void$P$Object, &Func$Object$isKindOf$$int$P$Object$P$char, &Func$Object$isKindOf$$int$P$Object$P$Object, &Func$Object$isInstanceOf$$int$P$Object$P$char, &Func$Object$isInstanceOf$$int$P$Object$P$Object, &Func$A$get_int$$int$P$A };
+        """
+        self.assertEqual(str(res.to_c()).replace(' ','').replace('\n', ''),
+                         expected.replace(' ','').replace('\n',''),
+                         'Incorrect output for full class test')
+
+
+        
+
+

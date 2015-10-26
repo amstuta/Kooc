@@ -42,17 +42,15 @@ class Class:
                     self.virtuals[v._name] = v
 
         # Mangling et save des non membres
-        self.decls = {}
+        self.decls = []
         for d in statement.body:
             if isinstance(d, cnorm.nodes.BlockStmt):
                 for i in d.body:
-                    dec_i = mangler.muckFangle(i, class_name)
-                    i._name = dec_i
-                    self.decls[dec_i] = i
+                    i._name = mangler.muckFangle(i, class_name)
+                    self.decls.append(i)
             else:
-                dec_d = mangler.muckFangle(d, class_name)
-                d._name = dec_d
-                self.decls[dec_d] = d
+                d._name = mangler.muckFangle(d, class_name)
+                self.decls.append(d)
 
         self.add_alloc_proto()
         self.get_inheritance()
@@ -130,9 +128,9 @@ class Class:
 
     def register_non_members(self):
         non_mbrs = []
-        for d in self.decls:
-            item = deepcopy(self.decls[d])
-            if type(item._ctype) == cnorm.nodes.FuncType:
+        for item in self.decls:
+            item = deepcopy(item)
+            if isinstance(item._ctype, cnorm.nodes.FuncType):
                 self.protos.append(item)
                 continue
             non_mbrs.append(item)

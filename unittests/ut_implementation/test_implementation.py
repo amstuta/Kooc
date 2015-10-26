@@ -19,8 +19,7 @@ class ImplementationTestCase(unittest.TestCase):
         pass
 
     def moduleTransfo(self, ast):
-        for class_name in decl_keeper.implementations:
-            imp = decl_keeper.implementations[class_name]
+        for imp in decl_keeper.implementations:
             for i in imp.imps:
                 ast.body.append(i)
             ast.body.extend(imp.virtuals)
