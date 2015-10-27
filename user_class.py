@@ -15,7 +15,7 @@ class Class:
         # Ajoute aux membres les fcts qui recoivent une instance de l'objet en first param
         self.check_first_param(statement)
 
-        # Mangling des save des membres
+        # Mangling et save des membres
         self.members = []
         if hasattr(statement, 'members'):
             for m in statement.members:
@@ -119,7 +119,7 @@ class Class:
             tpd_object = decl_keeper.typedef_vt_object
             struct = cnorm.nodes.ComposedType('_kc_vt_%s' % self.ident)
             struct._specifier = 1
-            setattr(struct, 'fields', tpd_object._ctype.fields)
+            setattr(struct, 'fields', deepcopy(tpd_object._ctype.fields))
             decl = cnorm.nodes.Decl('', struct)
             self.add_self_virtuals(decl)
             self.vt = decl

@@ -8,14 +8,16 @@ from kooc_class import *
 
 def main():
     inFile, outFile = check_argv()
-    create_header()
-    a = Kooc()
-    res = a.parse_file(inFile)
-    add_include(res)
-    """
-    if 'Object' in DeclKeeper.instance().modules:
-        del DeclKeeper.instance().modules['Object']
-    """
+
+    try:
+        create_header()
+        a = Kooc()
+        res = a.parse_file(inFile)
+        add_include(res)
+    except BaseException as e:
+        print(e)
+        return
+
     if 'Object' in decl_keeper.modules:
         del decl_keeper.modules['Object']
     moduleTransfo(res)

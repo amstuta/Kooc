@@ -12,6 +12,7 @@ from pyrser.grammar import Grammar
 from cnorm.parsing.statement import Statement
 from cnorm.parsing.declaration import Declaration
 from cnorm.passes import to_c
+from pyrser import error
 
 execPath = os.getcwd()
 filePath = os.path.realpath(os.path.dirname(__file__))
@@ -48,19 +49,6 @@ class Kooc(Grammar, Declaration):
     declaration = [Declaration.declaration | module | import | implementation | class]
     module = ["@module" id :i Statement.compound_statement :st #add_module(st, i)]
     import = ["@import" '"' [id ".kh"] :i '"' #add_import(current_block, i)]
-
-
-
-    /*
-    compound_statement = [
-    '{'
-    __scope__ :current_block #new_blockstmt(_,current_block)
-    [ ["@member" [line_of_code | compound_statement] #add_member(_, current_block) ] | ["@virtual" [line_of_code | compound_statement] #add_virtual(_, current_block)] | line_of_code]*
-    '}'
-    ]
-    class = ["@class" id :class_name #add_type(current_block, class_name) [':' id :parent_class #add_parent(class_name, parent_class) ]? compound_statement :st #add_class(current_block, class_name, st)]
-    */
-
 
 
     class_compound_statement = [
@@ -100,9 +88,11 @@ class Kooc(Grammar, Declaration):
 
 @meta.hook(Kooc)
 def add_block(self, node, st):
-    setattr(node, 'body', [st])
+    if not hasattr(node, 'body'):
+        setattr(node, 'body', [])
+    node.body.append(st)
     return True
-        
+
 
 @meta.hook(Kooc)
 def add_id_call(self, cur_block, fct):
@@ -197,6 +187,9 @@ def add_module(self, statement, ident):
 def add_member(self, node, ast):
     if not hasattr(node, 'members'):
         setattr(node, 'members', [])
+    st = ast.ref.body[len(ast.ref.body) - 1]
+    if st._ctype._identifier in ast.ref.types:
+        raise BaseException('Error during parsing: symbol \"%s\" redeclared differently' % st._ctype._identifier)
     node.members.append(ast.ref.body[len(ast.ref.body) - 1])
     ast.ref.body.pop(len(ast.ref.body) - 1)
     return True
