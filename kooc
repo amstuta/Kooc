@@ -16,6 +16,7 @@ def main():
         add_include(res)
     except BaseException as e:
         print(e)
+        raise
         return
 
     if 'Object' in decl_keeper.modules:

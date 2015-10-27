@@ -188,7 +188,8 @@ def add_member(self, node, ast):
     if not hasattr(node, 'members'):
         setattr(node, 'members', [])
     st = ast.ref.body[len(ast.ref.body) - 1]
-    if st._ctype._identifier in ast.ref.types:
+    if hasattr(st, '_ctype') and hasattr(st._ctype, '_identifier') \
+       and st._ctype._identifier in ast.ref.types:
         raise BaseException('Error during parsing: symbol \"%s\" redeclared differently' % st._ctype._identifier)
     node.members.append(ast.ref.body[len(ast.ref.body) - 1])
     ast.ref.body.pop(len(ast.ref.body) - 1)
