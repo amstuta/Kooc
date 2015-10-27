@@ -26,11 +26,21 @@ def create_typedef_vt():
         int (*isInstanceOf)(Object *, const char *);
         int (*isInstanceOf)(Object *, Object *);
         }; ''')
-    
+
+    res2 = d.parse(
+        '''
+        typedef struct _kc_Object Object;
+        void clean(Object *);
+        int isKindOf(Object *, const char *);
+        int isKindOf(Object *, Object *);
+        int isInstanceOf(Object *, const char *);
+        int isInstanceOf(Object *, Object *);
+        ''')
+    res2.body.pop(0)
     for decl in res.body:
         if isinstance(decl._ctype, cnorm.nodes.ComposedType) and decl._ctype._identifier == '_kc_vt_Object':
-            for dcl in decl._ctype.fields:
-                dcl._name = mangler.mimpleSangle(dcl)
+            for (dcl, proto) in zip(decl._ctype.fields, res2.body):
+                dcl._name = mangler.mimpleSangle(proto)
             global typedef_vt_object
             typedef_vt_object = decl
 

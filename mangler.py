@@ -18,7 +18,7 @@ def muckFangle(proto, module):
         res += "Var"
     res += '$'
     res += module + '$'
-    res += proto._name + '$'
+    res += proto._name
     res += muckFimpleSangle(proto._ctype._decltype, False)
     #pointerR = proto._ctype._decltype
     #while pointerR != None:
@@ -49,7 +49,7 @@ def muckFangle(proto, module):
     
 def mimpleSangle(proto):
     res = ""
-    res += proto._name + '$'
+    res += proto._name
     """pointerR = proto._ctype._decltype
     while pointerR != None:
     if isinstance(pointerR, cnorm.nodes.PointerType):
@@ -61,7 +61,25 @@ def mimpleSangle(proto):
     res += Mangler.speci[proto._ctype._specifier]
     res += '$' + proto._ctype._identifier"""
     res += muckFimpleSangle(proto._ctype._decltype, True)
-    #if hasattr(proto._ctype._decltype._decltype, "_params"):        
+    if proto._ctype._specifier in range(4,7):
+        res += Mangler.speci[proto._ctype._specifier]
+    res += "$" + proto._ctype._identifier
+    #if hasattr(proto._ctype._decltype._decltype, "_params"):
+    if isinstance(proto._ctype, cnorm.nodes.FuncType):
+        for idx, par in enumerate(proto._ctype.params):
+            if idx == 0 : continue
+            res += muckFimpleSangle(par._ctype._decltype, True)
+            #pointer = par._ctype._decltype
+            #res += '$'
+            #while pointer != None:
+            #    if isinstance(pointer, cnorm.nodes.PointerType):
+            #        res += 'P'
+            #    elif isinstance(pointer, cnorm.nodes.ArrayType):
+            #        res += 'A'
+            #    pointer = pointer._decltype
+            if par._ctype._specifier in range(4,7):
+                res += Mangler.speci[par._ctype._specifier]
+            res += '$' + par._ctype._identifier
     """for idx, par in enumerate(proto._ctype._decltype._decltype._params):
     print (par._ctype._identifier)
     if idx == 0: continue

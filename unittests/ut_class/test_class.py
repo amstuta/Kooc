@@ -181,11 +181,11 @@ class ClassTestCase(unittest.TestCase):
         
         struct _kc_vt_A
         {
-        void (*clean$P$void)(Object *);
-        int (*isKindOf$P$int)(Object *, const char *);
-        int (*isKindOf$P$int)(Object *, Object *);
-        int (*isInstanceOf$P$int)(Object *, const char *);
-        int (*isInstanceOf$P$int)(Object *, Object *);
+        void (*clean$$void)(Object *);
+        int (*isKindOf$$int$P$char)(Object *, const char *);
+        int (*isKindOf$$int$P$Object)(Object *, Object *);
+        int (*isInstanceOf$$int$P$char)(Object *, const char *);
+        int (*isInstanceOf$$int$P$Object)(Object *, Object *);
         int (*get_int$$int)(A *self);
         };
         struct _kc_A
