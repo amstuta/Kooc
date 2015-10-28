@@ -9,9 +9,10 @@ class Implementation:
     def __init__(self, ident, imp):
         self.ident = ident
         self.alloc_fct = None
-
         self.imps = []
         self.virtuals = []
+
+        self.add_vars_decls()
         if self.ident in decl_keeper.classes:
             self.create_alloc_fct()
             
@@ -34,8 +35,16 @@ class Implementation:
             self.imps.append(imp)
 
 
-    def create_alloc_fct(self):
+    def add_vars_decls(self):
+        if self.ident in decl_keeper.modules:
+            self.imps.extend(decl_keeper.modules[self.ident].decls_vars)
+        elif self.ident in decl_keeper.classes:
+            obj = decl_keeper.classes[self.ident]
+            self.imps.extend(obj.decls_vars)
+            self.imps.append(obj.inst_vt)
+            
 
+    def create_alloc_fct(self):
         d = Declaration()
         res = d.parse("""
         typedef struct _kc_%s %s;

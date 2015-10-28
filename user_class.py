@@ -43,14 +43,28 @@ class Class:
 
         # Mangling et save des non membres
         self.decls = []
+        self.decls_vars = []
         for d in statement.body:
             if isinstance(d, cnorm.nodes.BlockStmt):
                 for i in d.body:
                     i._name = mangler.muckFangle(i, class_name)
-                    self.decls.append(i)
+
+                    if not isinstance(i._ctype, cnorm.nodes.FuncType):
+                        self.decls_vars.append(i)
+                        tmp = deepcopy(i)
+                        tmp._ctype._storage = 4
+                        self.decls.append(tmp)
+                    else:
+                        self.decls.append(i)
             else:
                 d._name = mangler.muckFangle(d, class_name)
-                self.decls.append(d)
+                if not isinstance(d._ctype, cnorm.nodes.FuncType):
+                    self.decls_vars.append(d)
+                    tmp = deepcopy(d)
+                    tmp._ctype._storage = 4
+                    self.decls.append(tmp)
+                else:
+                    self.decls.append(d)
 
         self.add_alloc_proto()
         self.get_inheritance()
@@ -203,7 +217,12 @@ class Class:
         
         self.inst_vt = decl
         self.mangle_virtuals()
-        return decl
+
+        ext = deepcopy(self.inst_vt)
+        delattr(ext, '_assign_expr')
+        ext._ctype._storage = cnorm.nodes.Storages.EXTERN
+        
+        return ext
 
 
     # Mangle les nom des prototypes de virtuals
