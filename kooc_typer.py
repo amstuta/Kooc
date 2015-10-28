@@ -25,6 +25,18 @@ class Function(Type):
     def push_param(self, param_type):
         self.params.append(param_type)
 
+class Variable(Type):
+    def __init__(self, name, v_type):
+        Type.__init__(self, name)
+        self.v_type = v_type
+
+class Struct(Type):
+    def __init__(self, name):
+        self.name = name
+        self.fields = []
+
+    def add_field(self, field):
+        self.fields.append(field)
 
 ### Useful types
 
@@ -56,6 +68,23 @@ def resolve_type(self, scope):
         t.push_param(param_t)
     return t
 
+@meta.add_method(ComposedType)
+def resolve_type(self, scope):
+    t = Struct(self._identifier)
+    if hasattr(self, "fields"):
+        if self._identifier in scope.decls:
+            raise Exception("Redefinition du symbole `{}`".format(self._identifier))
+        new_scope = DefScope(scope)
+        for f in self.fields:
+            f_type = Variable(f._name, f.resolve_type(new_scope))
+            t.add_field(f_type)
+        scope.decls[self._identifier] = t
+    else:
+        if not self._identifier in scope.decls:
+            raise Exception("Utilisation d'un symbole non defini : `{}`".format(self._identifier))
+        t = scope.find_decl(self._identifier)
+    return t
+
 ### End CType resolver
 
 ### Stmt resolver
@@ -64,6 +93,25 @@ class DefScope():
     def __init__(self, parent = None):
         self.parent = parent
         self.defs = {}
+        self.decls = {}
+
+    def find_def(self, name):
+        scope = self
+        while not scope is None:
+            if name in scope.defs:
+                self.expr_type = scope.defs[name]
+                return self.expr_type
+            scope = scope.parent
+        raise Exception("symbole `{}` non défini".format(name)) #TODO(lakh): throw
+
+    def find_decl(self, name):
+        scope = self
+        while not scope is None:
+            if name in scope.decls:
+                self.expr_type = scope.decls[name]
+                return self.expr_type
+            scope = scope.parent
+        raise Exception("symbole `{}` non défini".format(self.value)) #TODO(lakh): throw
 
 @meta.add_method(parsing.Node)
 def resolve_type(self, scope = None):
@@ -93,7 +141,7 @@ def resolve_type(self, scope = None):
 def resolve_type(self, scope):
     self.expr_type = self._ctype.resolve_type(scope)
     if self._name in scope.defs:
-        raise Exception("redéfinition d'un symbole dans le même scope") #TODO(lakh): throw
+        raise Exception("redéfinition d'un symbole dans le même scope : `{}`".format(self._name)) #TODO(lakh): throw
     scope.defs[self._name] = self.expr_type
     if hasattr(self, "_assign_expr"):
         self._assign_expr.resolve_type(scope)
@@ -102,13 +150,18 @@ def resolve_type(self, scope):
         self.body.resolve_type(scope)
     return self.expr_type
 
-
+@meta.add_method(BlockInit)
+def resolve_type(self, scope):
+    self.expr_type = Struct("%S")
+    for decl in self.body:
+       self.expr_type.add_field(decl.resolve_type(scope))
+    return self.expr_type
 
 @meta.add_method(Func)
 def resolve_type(self, scope):
     t = self.call_expr.resolve_type(scope)
     if not isinstance(t, Function):
-        raise Exception("call_expr de Func n'est pas une fonction") #TODO(lakh): throw
+        raise Exception("call_expr de Func n'est pas une fonction : t : {}".format(repr(t))) #TODO(lakh): throw
     self.expr_type = t.return_type
     return self.expr_type
 
@@ -132,16 +185,11 @@ def resolve_type(self, scope):
     if not isinstance(self.expr_type, Pointer): # Array est gere comme un pointeur pour la simplicite
         from cnorm.passes import to_c
         raise Exception("On déréférence une expression de type non-pointeur : `{}`".format(self.params[0].to_c())) #TODO(lakh): throw
-    self.expr_type = self.expr_type.expr_type 
+    self.expr_type = self.expr_type.expr_type
 
 @meta.add_method(Id)
 def resolve_type(self, scope):
-    while not scope is None:
-        if self.value in scope.defs:
-            self.expr_type = scope.defs[self.value]
-            return self.expr_type
-        scope = scope.parent
-    raise Exception("symbole `{}` non défini".format(self.value)) #TODO(lakh): throw
+    return scope.find_def(self.value)
 
 @meta.add_method(Literal)
 def resolve_type(self, scope):
