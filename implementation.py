@@ -42,7 +42,8 @@ class Implementation:
             obj = decl_keeper.classes[self.ident]
             self.imps.extend(obj.decls_vars)
             self.imps.append(obj.inst_vt)
-            
+        else:
+            raise BaseException('Unknown module or class : %s' % self.ident)
 
     def create_alloc_fct(self):
         d = Declaration()

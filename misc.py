@@ -13,14 +13,6 @@ def moduleTransfo(ast):
         if decl_keeper.modules[mod].recurs == False:
             for decl in decl_keeper.modules[mod].decls:
                 ast.body.append(decl)
-
-    """
-    for class_name in decl_keeper.implementations:
-        imp = decl_keeper.implementations[class_name]
-        for i in imp.imps:
-            ast.body.append(i)
-        ast.body.extend(imp.virtuals)
-    """
     for imp in decl_keeper.implementations:
         for i in imp.imps:
             ast.body.append(i)
@@ -70,13 +62,20 @@ def check_argv():
 
 def create_header():
     a = Kooc()
-    res = a.parse_file(filePath + '/kooc.kh')
-    res.body.insert(0, cnorm.nodes.Raw('#ifndef KOOC_H\n#define KOOC_H\n'))
-    moduleTransfo(res)
+    res_h = a.parse_file(filePath + '/kooc.kh')
+    res_h.body.insert(0, cnorm.nodes.Raw('#ifndef KOOC_H\n#define KOOC_H\n'))
+    moduleTransfo(res_h)
     decl_keeper.create_typedef_vt()
-    res.body.append(decl_keeper.instanciate_vtable())
-    res.body.append(cnorm.nodes.Raw('#endif\n'))
-    res.body.insert(3, decl_keeper.typedef_vt_object)
-    decl_keeper.clean_implementations()
+    res_h.body.append(cnorm.nodes.Raw('#endif\n'))
+    res_h.body.insert(3, decl_keeper.typedef_vt_object)
     outFile = execPath + '/kooc.h'
-    write_file_out(outFile, res)
+    write_file_out(outFile, res_h)
+
+    res_c = a.parse_file(filePath + '/kooc.kc')
+    res_c.body.append(decl_keeper.instanciate_vtable())
+    res_c.body.pop(0)
+    res_c.body.extend(decl_keeper.implementations[0].imps)
+    outFile = execPath + '/kooc.c'
+    write_file_out(outFile, res_c)
+
+    decl_keeper.clean_implementations()
