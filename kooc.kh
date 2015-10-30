@@ -22,26 +22,4 @@ struct _kc_Object
 	int isInstanceOf(Object *, Object *);
 }
 
-
-@implementation Object
-{
-	void clean(Object *self)
-	{	
-	}
-
-	int isKindOf(Object *self, const char *name)
-	{
-	}
-
-	int isKindOf(Object *self, Object *a)
-	{
-	}
-
-	int isInstanceOf(Object *self, const char *name)
-	{
-	}
-
-	int isInstanceOf(Object *self, Object *a)
-	{
-	}
-}
+extern vt_Object vtable_Object;
