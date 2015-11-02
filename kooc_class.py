@@ -25,11 +25,22 @@ class Kooc(Grammar, Declaration):
     primary_expression = [ 
       '(' expression:expr ')' #new_paren(_, expr) 
       | [ Literal.literal | identifier ]:>_ 
-      | kooc_call #add_kooc_call(_,current_block)
+      | kooc_expression:>_
+    ]
+
+    kooc_expression = [
+        [
+            kooc_call #add_kooc_call(_,current_block)
+            | kooc_cast:>_
+        ]
+    ]
+
+    kooc_cast = [
+      "@!" '(' type_name:t ')' '[' expression:e ']'
+      #kooc_cast(_, t, e)
     ]
 
     kooc_call = [ 
-      [ "@!" '(' id :type ')' #reg_type(current_block, type) ]? 
       '[' id_module [id :fct params_list #add_id_call(current_block, fct)]? ']'
     ]
 
@@ -38,7 +49,6 @@ class Kooc(Grammar, Declaration):
     params_list = [
       [
         ':' 
-        [ '(' type_id :type ')' #reg_type_param(current_block, type) ]? 
         assignement_expression :id_param #save_param(current_block, id_param)
       ]*
     ]
@@ -91,6 +101,11 @@ def add_block(self, node, st):
     if not hasattr(node, 'body'):
         setattr(node, 'body', [])
     node.body.append(st)
+    return True
+
+@meta.hook(Kooc)
+def kooc_cast(self, node, t, expr):
+    node.set(KoocCast(t._ctype, expr))
     return True
 
 

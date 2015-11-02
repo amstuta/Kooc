@@ -1,5 +1,7 @@
 from pyrser import meta, parsing
 from cnorm.nodes import *
+from kooc_class import *
+
 
 class Type():
     def __init__(self, name):
@@ -11,41 +13,100 @@ class Type():
             items.append("{} = {}".format(k, repr(v)))
         return "{}({})".format(self.__class__.__name__, ", ".join(items))
 
-class Pointer(Type):
-    def __init__(self, name, expr_type):
-        Type.__init__(self, name)
-        self.expr_type = expr_type
-
-class Function(Type):
-    def __init__(self, name, return_type):
-        Type.__init__(self, name)
-        self.params = []
-        self.return_type = return_type
-
-    def push_param(self, param_type):
-        self.params.append(param_type)
-
-class Variable(Type):
-    def __init__(self, name, v_type):
-        Type.__init__(self, name)
-        self.v_type = v_type
-
-class Struct(Type):
-    def __init__(self, name):
-        self.name = name
-        self.fields = []
-
-    def add_field(self, field):
-        self.fields.append(field)
+    def __eq__(self, other):
+        if isinstance(other, Variable):
+            return self == other.v_type
+        if not isinstance(other, Type):
+            return False
+        return self.name == other.name
 
 ### Useful types
 
 int_type = Type("int")
 char_type = Type("char")
-str_type = Pointer("%P", char_type)
+void_type = Type("void")
 
 ###
 
+class Pointer(Type):
+
+    def __init__(self, expr_type):
+        Type.__init__(self, "%P")
+        self.expr_type = expr_type
+
+    def __eq__(self, other):
+        if not isinstance(other, Pointer):
+            return False
+        if self.expr_type == void_type or other.expr_type == void_type:
+            return True
+        return self.expr_type == other.expr_type
+
+### Useful types
+
+voidptr_type = Pointer(void_type)
+str_type = Pointer(char_type)
+
+###
+
+class Function(Type):
+    def __init__(self, return_type, params = None):
+        Type.__init__(self, "%F")
+        if params is None:
+            params = []
+        self.params = params
+        self.return_type = return_type
+
+    def push_param(self, param_type):
+        self.params.append(param_type)
+
+    def __eq__(self, other):
+        if isinstance(other, Variable):
+            return self == other.v_type
+        #TODO(lakh): Gérer la comparaison fct* et fct ??
+        if not isinstance(other, Function):
+            return False
+        if not self.return_type == other.return_type:
+            return False
+        if len(self.params) != len(other.params):
+            return False
+        for (idx, param) in enumerate(self.params):
+            if not param == other.params[idx]:
+                return False
+        return True
+
+
+class Variable(Type):
+    def __init__(self, name, v_type):
+        Type.__init__(self, "%V")
+        self.name = name
+        self.v_type = v_type
+
+    def __eq__(self, other):
+        if isinstance(other, Variable):
+            return self.v_type == other.v_type
+        return self.v_type == other
+
+class Struct(Type):
+    def __init__(self, name, fields = None):
+        self.name = name
+        if fields is None:
+            fields = []
+        self.fields = fields
+
+    def add_field(self, field):
+        self.fields.append(field)
+
+    def __eq__(self, other):
+        if isinstance(other, Variable):
+            return self == other.v_type
+        if not isinstance(other, Struct):
+            return False
+        if len(self.fields) != len(other.fields):
+            return False
+        for (idx, field) in enumerate(self.fields):
+            if not field == other.fields[idx]:
+                return False
+        return True
 
 ### CType resolver
 
@@ -55,14 +116,14 @@ def resolve_type(self, scope):
     declt = self._decltype
     while not declt is None:
         if isinstance(declt, PointerType) or isinstance(declt, ArrayType):
-            t = Pointer("%P", t)
+            t = Pointer(t)
         declt = declt._decltype
     return t
 
 @meta.add_method(FuncType)
 def resolve_type(self, scope):
     return_type = PrimaryType.resolve_type(self, scope)
-    t = Function("%F", return_type)
+    t = Function(return_type)
     for param in self._params:
         param_t = param.resolve_type(scope)
         t.push_param(param_t)
@@ -176,7 +237,7 @@ def resolve_type(self, scope):
                 raise Exception("On déréférence une expression de type non-pointeur : `{}`".format(self.params[0].to_c())) #TODO(lakh): throw
             self.expr_type = self.expr_type.expr_type
         elif self.call_expr.value == "&":
-            self.expr_type = Pointer("%P", self.expr_type)
+            self.expr_type = Pointer(self.expr_type)
     return self.expr_type
 
 @meta.add_method(Array)
@@ -198,5 +259,9 @@ def resolve_type(self, scope):
     else:
         self.expr_type = int_type
     return self.expr_type
+
+@meta.add_method(KoocCast)
+def resolve_type(self, scope):
+    self.expr_type = self.ctype.resolve_type(scope)
 
 # End Expr resolver
