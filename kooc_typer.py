@@ -169,7 +169,7 @@ def resolve_type(self, scope):
     return_type = PrimaryType.resolve_type(self, scope)
     t = Function(return_type)
     for param in self._params:
-        param_t = param.resolve_type(scope)
+        param_t = param.resolve_type(scope, None)
         t.push_param(param_t)
     return t
 
@@ -181,7 +181,7 @@ def resolve_type(self, scope):
             raise Exception("Redefinition du symbole `{}`".format(self._identifier))
         new_scope = DefScope(scope)
         for f in self.fields:
-            f_type = Variable(f._name, f.resolve_type(new_scope))
+            f_type = Variable(f._name, f.resolve_type(new_scope, None))
             t.add_field(f_type)
         scope.decls[self._identifier] = t
     else:
@@ -219,52 +219,55 @@ class DefScope():
         raise Exception("symbole `{}` non défini".format(self.value)) #TODO(lakh): throw
 
 @meta.add_method(parsing.Node)
-def resolve_type(self, scope = None):
+def resolve_type(self, scope = None, type_set = None):
     if scope is None:
         scope = DefScope()
     if hasattr(self, "body"):
         new_scope = DefScope(scope)
         for node in self.body:
-            node.resolve_type(new_scope)
+            node.resolve_type(new_scope, type_set)
     if hasattr(self, "expr"):
-        self.expr.resolve_type(scope)
+        self.expr.resolve_type(scope, type_set)
     if hasattr(self, "condition"):
         new_scope = DefScope(scope)
-        self.condition.resolve_type(new_scope)
+        self.condition.resolve_type(new_scope, type_set)
     if hasattr(self, "thencond"):
         new_scope = DefScope(scope)
-        self.thencond.resolve_type(new_cope)
+        self.thencond.resolve_type(new_cope, type_set)
     if hasattr(self, "elsecond"):
         new_scope = DefScope(scope)
-        self.elsecond.resolve_type(new_scope)
+        self.elsecond.resolve_type(new_scope, type_set)
 
 # End Stmt resolver
 
 # Expr resolver
 
 @meta.add_method(Decl)
-def resolve_type(self, scope):
+def resolve_type(self, scope, type_set):
     self.expr_type = self._ctype.resolve_type(scope)
     if self._name in scope.defs:
         raise Exception("redéfinition d'un symbole dans le même scope : `{}`".format(self._name)) #TODO(lakh): throw
     scope.defs[self._name] = self.expr_type
+
     if hasattr(self, "_assign_expr"):
-        self._assign_expr.resolve_type(scope)
+        s = TypesSet([ self.expr_type ])
+        self._assign_expr.resolve_type(scope, s)
+
     new_scope = DefScope(scope)
     if hasattr(self, "body"):
         self.body.resolve_type(scope)
     return self.expr_type
 
 @meta.add_method(BlockInit)
-def resolve_type(self, scope):
+def resolve_type(self, scope, type_set):
     self.expr_type = Struct("%S")
     for decl in self.body:
-       self.expr_type.add_field(decl.resolve_type(scope))
+        self.expr_type.add_field(decl.resolve_type(scope, None)) #TODO(lakh): remplacer None. Overload pas gere ici
     return self.expr_type
 
 @meta.add_method(Func)
-def resolve_type(self, scope):
-    t = self.call_expr.resolve_type(scope)
+def resolve_type(self, scope, type_set):
+    t = self.call_expr.resolve_type(scope, None) #TODO(lakh): Traiter les parametres en premier ???????? Wtf sinon ? Ignorer ? On fait la selection plus tard ?
     if not isinstance(t, Function):
         raise Exception("call_expr de Func n'est pas une fonction : t : {}".format(repr(t))) #TODO(lakh): throw
     self.expr_type = t.return_type
@@ -272,8 +275,8 @@ def resolve_type(self, scope):
 
 
 @meta.add_method(Unary)
-def resolve_type(self, scope):
-    self.expr_type = self.params[0].resolve_type(scope)
+def resolve_type(self, scope, type_set):
+    self.expr_type = self.params[0].resolve_type(scope, type_set)
     if isinstance(self.call_expr, Raw):
         if self.call_expr.value == "*":
             if not isinstance(self.expr_type, Pointer):
@@ -285,19 +288,24 @@ def resolve_type(self, scope):
     return self.expr_type
 
 @meta.add_method(Array)
-def resolve_type(self, scope):
-    self.expr_type = self.call_expr.resolve_type(scope)
+def resolve_type(self, scope, type_set):
+    ts = TypesSet()
+    for t in type_set.types:
+        ts.push(Pointer(t))
+
+    self.expr_type = self.call_expr.resolve_type(scope, ts)
     if not isinstance(self.expr_type, Pointer): # Array est gere comme un pointeur pour la simplicite
         from cnorm.passes import to_c
         raise Exception("On déréférence une expression de type non-pointeur : `{}`".format(self.params[0].to_c())) #TODO(lakh): throw
+
     self.expr_type = self.expr_type.expr_type
 
 @meta.add_method(Id)
-def resolve_type(self, scope):
+def resolve_type(self, scope, type_set):
     return scope.find_def(self.value)
 
 @meta.add_method(Literal)
-def resolve_type(self, scope):
+def resolve_type(self, scope, type_set):
     if self.value[0] == '"':
         self.expr_type = str_type
     else:
@@ -305,7 +313,9 @@ def resolve_type(self, scope):
     return self.expr_type
 
 @meta.add_method(KoocCast)
-def resolve_type(self, scope):
+def resolve_type(self, scope, type_set):
     self.expr_type = self.ctype.resolve_type(scope)
+    self.expr.resolve_type(scope, TypesSet([ self.expr_type ]))
+    return self.expr_type
 
 # End Expr resolver

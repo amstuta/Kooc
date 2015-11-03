@@ -205,7 +205,22 @@ class TyperTestCase(unittest.TestCase):
                 int a;
                 float b;
             };
+
+            struct B
+            {
+                int f(int x);
+            };
+
+            struct B c;
+
+            int main(int argc, char **argv)
+            {
+                struct B b;
+                return [A.a] + [A f :1];
+                return [b f :1] + [c f :2];
+            }
             """)
+            print(ast.body)
 
         def test_cast(self):
             ast = self.kooc.parse("""

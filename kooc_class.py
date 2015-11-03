@@ -30,7 +30,7 @@ class Kooc(Grammar, Declaration):
 
     kooc_expression = [
         [
-            kooc_call #add_kooc_call(_,current_block)
+            kooc_call:>_
             | kooc_cast:>_
         ]
     ]
@@ -40,21 +40,22 @@ class Kooc(Grammar, Declaration):
       #kooc_cast(_, t, e)
     ]
 
-    kooc_call = [ 
-      '[' id_module [id :fct params_list #add_id_call(current_block, fct)]? ']'
+    kooc_call = [
+            
+        '['
+            Base.id:i #kooc_call(_, i)
+            [
+                [ '.' Base.id:mbr #kooc_call_member(_, mbr) ]
+                |
+                [
+                    Base.id:func #kooc_call_func(_, func)
+                    [ ':' assignement_expression:e #kooc_call_add_param(_, e) ]*
+                    #kooc_end_call(_, current_block)
+                ]
+            ]
+        ']'
+
     ]
-
-
-    id_module = [id :mod #add_id_module(current_block, mod) ['.' id :mbr #add_mbr_call(current_block, mbr)]?]
-    params_list = [
-      [
-        ':' 
-        assignement_expression :id_param #save_param(current_block, id_param)
-      ]*
-    ]
-
-
-    type_id = [ ['a'..'z'|'A'..'Z'|'_']['a'..'z'|'A'..'Z'|'0'..'9'|'_'|' '|'*']* ]
 
     declaration = [Declaration.declaration | module | import | implementation | class]
     module = ["@module" id :i Statement.compound_statement :st #add_module(st, i)]
@@ -108,72 +109,33 @@ def kooc_cast(self, node, t, expr):
     node.set(KoocCast(t._ctype, expr))
     return True
 
-
 @meta.hook(Kooc)
-def add_id_call(self, cur_block, fct):
-    setattr(cur_block, 'call', True)
-    setattr(cur_block, 'fct', self.value(fct))
-    return True
-
-
-@meta.hook(Kooc)
-def reg_type(self, cur_block, expr_type):
-    setattr(cur_block, 'expr_type', self.value(expr_type))
-    return True
-
-
-@meta.hook(Kooc)
-def reg_type_param(self, cur_block, expr_type):
-    setattr(cur_block, 'param_type', self.value(expr_type))
-    return True
-
-
-@meta.hook(Kooc)
-def add_kooc_call(self, ast, cur_block):
-    expr_type = None
-    if hasattr(cur_block, 'expr_type'):
-        expr_type = cur_block.expr_type
-        delattr(cur_block, 'expr_type')
-    if cur_block.call == True:
-        params = []
-        if hasattr(cur_block, 'params'):
-            params = cur_block.params
-            delattr(cur_block, 'params')
-        print(params)
-        ck = KoocCall(cur_block.module, cur_block.fct, expr_type, params)
-        setattr(ast, 'expr', ck)
-        delattr(cur_block, 'fct')
-    else:
-        kc = KoocCall(cur_block.module, cur_block.mbr, expr_type)
-        setattr(ast, 'expr', kc)
-        delattr(cur_block, 'mbr')
-    delattr(cur_block, 'module')
-    delattr(cur_block, 'call')
-    return True
-
-
-@meta.hook(Kooc)
-def add_mbr_call(self, cur_block, mbr):
-    setattr(cur_block, 'mbr', self.value(mbr))
-    setattr(cur_block, 'call', False)
+def kooc_call(self, node, i):
+    node.set(KoocCall(self.value(i)))
     return True
 
 @meta.hook(Kooc)
-def add_id_module(self, cur_block, mod):
-    setattr(cur_block, 'module', self.value(mod))
+def kooc_call_member(self, node, mbr):
+    node.call = False
+    node.member = self.value(mbr)
     return True
 
 @meta.hook(Kooc)
-def save_param(self, cur_block, param):
-    if not hasattr(cur_block, 'params'):
-        setattr(cur_block, 'params', [])
-    expr_type = None
-    if hasattr(cur_block, 'param_type'):
-        expr_type = cur_block.param_type
-        delattr(cur_block, 'param_type')
-    cur_block.params.append((self.value(param), expr_type))
+def kooc_call_func(self, node, func):
+    node.call = True
+    node.member = self.value(func)
+    node.params = []
     return True
 
+@meta.hook(Kooc)
+def kooc_call_add_param(self, node, expr):
+    node.params.append(expr)
+    return True
+
+@meta.hook(Kooc)
+def kooc_end_call(self, node, current_block):
+    #detecter appel grace a une variable/un moduel directement
+    return True
 
 @meta.hook(Kooc)
 def add_parent(self, class_name, parent_name):
