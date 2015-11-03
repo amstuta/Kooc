@@ -93,12 +93,32 @@ class TyperTestCase(unittest.TestCase):
             self.assertTrue(t == t2)
             self.assertFalse(t3 == t)
 
+        def test_set_eq(self):
+            s = TypesSet([ int_type, char_type ])
+            s2 = TypesSet([ int_type ])
+            s3 = TypesSet([ voidptr_type ])
+            s4 = TypesSet([ int_type, char_type ])
+            self.assertFalse(s == s2)
+            self.assertFalse(s == s3)
+            self.assertTrue(s == s4)
+
+        def test_set_intersect_type(self):
+            s = TypesSet([ int_type, char_type ])
+            self.assertTrue(s.intersect(void_type) is None)
+            self.assertTrue(s.intersect(int_type) == int_type)
+
+        def test_set_intersect_set(self):
+            s = TypesSet([ int_type, char_type, str_type ])
+            s2 = TypesSet([ voidptr_type, int_type, str_type ])
+            r = s.intersect(s2)
+            expected = TypesSet([ int_type, str_type ])
+            self.assertTrue(r == expected)
+
         def test_int(self):
             ast = self.kooc.parse("int a = 42;")
             expected = Type("int")
             ast.resolve_type()
             self.assertTrue(ast.body[0].expr_type == expected)
-
 
         def test_ptr(self):
             ast = self.kooc.parse("char* a = 0;")

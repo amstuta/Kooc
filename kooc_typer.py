@@ -108,6 +108,50 @@ class Struct(Type):
                 return False
         return True
 
+class TypesSet():
+    def __init__(self, types = None):
+        if types is None:
+            types = []
+        self.types = types
+
+    def __eq__(self, other):
+        if not isinstance(other, TypesSet):
+            return False
+        if len(self.types) != len(other.types):
+            return False
+        for t in self.types:
+            if not t in other.types:
+                return False
+        return True
+
+    def push(self, obj):
+        if isinstance(obj, TypesSet):
+            for t in obj.types:
+                self.push(t)
+        else:
+            for t in self.types:
+                if t == obj:
+                    return None
+            self.types.append(obj)
+
+    def intersect(self, obj):
+        if isinstance(obj, Type):
+            return self.intersect_type(obj)
+        return self.intersect_set(obj)
+
+    def intersect_type(self, obj):
+        for t in self.types:
+            if t == obj:
+                return obj
+        return None
+
+    def intersect_set(self, obj):
+        r = TypesSet()
+        for t in obj.types:
+            if self.intersect_type(t) is not None:
+                r.push(t)
+        return r
+
 ### CType resolver
 
 @meta.add_method(PrimaryType)
