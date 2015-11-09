@@ -28,6 +28,9 @@ class ImplementationTestCase(unittest.TestCase):
 
     def test_implementation_simple(self):
         res = self.kooc.parse("""
+        @module Test
+        {
+        }
         @implementation Test
         {
         int toto()
@@ -69,6 +72,12 @@ class ImplementationTestCase(unittest.TestCase):
 
     def test_implementation_second(self):
         res = self.kooc.parse("""
+        @module A
+        {
+        }
+        @module B
+        {
+        }
         @implementation A {
         void f() {}
         void f(int a, float b) {}

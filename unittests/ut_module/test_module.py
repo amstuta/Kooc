@@ -33,7 +33,7 @@ class ModuleTestCase(unittest.TestCase):
         }
         """)
         expected = """
-        int Var$A$i$$int = 0;
+        extern int Var$A$i$$int;
         void Func$A$f$$void();
         """
         self.moduleTransfo(res)
@@ -55,9 +55,9 @@ class ModuleTestCase(unittest.TestCase):
         }
         """)
         expected = """
-        int   Var$A$i$$int = 0;
-        float Var$A$i$$float = 1;
-        void  *Var$A$i$P$void = NULL;
+        extern int   Var$A$i$$int;
+        extern float Var$A$i$$float;
+        extern void  *Var$A$i$P$void;
         void  Func$A$i$$void$P$char(const char *);
         int   Func$A$i$$int$$float$$int$$char(float,int,char);
         int   Func$A$i$$int$$float$$int(float,int);
