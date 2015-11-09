@@ -15,6 +15,7 @@ class Implementation:
         self.add_vars_decls()
         if self.ident in decl_keeper.classes:
             self.create_alloc_fct()
+            self.create_delete_fct()
             
         for i in imp.body:
             if isinstance(i, cnorm.nodes.BlockStmt):
@@ -45,6 +46,7 @@ class Implementation:
         else:
             raise BaseException('Unknown module or class : %s' % self.ident)
 
+
     def create_alloc_fct(self):
         d = Declaration()
         res = d.parse("""
@@ -64,6 +66,29 @@ class Implementation:
                 self.imps.append(decl)
 
 
+    # Créé une fct pour free les champs de l'object
+    def create_delete_fct(self):
+        d = Declaration()
+        res = d.parse("""
+        typedef struct _kc_Object Object;
+        typedef struct _kc_%s %s;
+        void delete(%s *self)
+        {
+        free((Object*)(self)->name);
+        clean(this);
+        }
+        """ % (self.ident, self.ident, self.ident))
+
+        for decl in res.body:
+            if isinstance(decl._ctype, cnorm.nodes.FuncType):
+                decl._name = mangler.muckFangle(decl, self.ident)
+                for dcl in decl.body.body:
+                    if hasattr(dcl.expr, 'call_expr') and dcl.expr.call_expr.value == 'clean':
+                        name = decl_keeper.classes[self.ident].members[0]._name
+                        dcl.expr.call_expr.value = name
+                self.imps.append(decl)
+
+
     # Créé une fct new pour chaque init rencontré
     def create_new_fct(self, ini):
         params = []
@@ -72,16 +97,20 @@ class Implementation:
         
         d = Declaration()
         res = d.parse("""
+        typedef struct _kc_Object Object;
         typedef struct _kc_%s %s;
         %s *new(%s)
         {
         %s* self;
         self = alloc();
-        init(self, c);
+        init(self, %s);
+        (Object*)(self)->name = "%s";
         return (self);
         }
         """ % (self.ident, self.ident, self.ident,
                ', '.join([str(c.to_c()).rstrip() for c in params]).replace(';', ''),
+               self.ident,
+               ', '.join([c._name for c in params]),
                self.ident))
 
         for decl in res.body:
@@ -89,12 +118,15 @@ class Implementation:
                 decl._name = mangler.muckFangle(decl, self.ident)
                 for dcl in decl.body.body:
                     if isinstance(dcl, cnorm.nodes.ExprStmt):
-                        if isinstance(dcl.expr, cnorm.nodes.Binary):
+                        if isinstance(dcl.expr, cnorm.nodes.Binary) and \
+                           isinstance(dcl.expr.params[0], cnorm.nodes.Cast):
+                            pass
+                        elif isinstance(dcl.expr, cnorm.nodes.Binary):
                             dcl.expr.params[1].call_expr.value = self.alloc_fct._name
                         elif isinstance(dcl.expr, cnorm.nodes.Func):
                             dcl.expr.call_expr.value = ini._name
                 self.imps.append(decl)
-        
+                
 
     # Ajoute le parametre self aux parametres de la fct membre
     def check_param(self, decl):

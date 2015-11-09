@@ -4,6 +4,7 @@ typedef struct _kc_Object Object;
 {
 	void clean(Object *self)
 	{
+		//free(self->name);
 	}
 
 	int isKindOf(Object *self, const char *name)
@@ -16,9 +17,19 @@ typedef struct _kc_Object Object;
 
 	int isInstanceOf(Object *self, const char *name)
 	{
+		if (!strcmp(self->name, name))
+		{
+			return 1;
+		}
+		return 0;
 	}
 
 	int isInstanceOf(Object *self, Object *a)
 	{
+		if (!strcmp(self->name, a->name))
+		{
+			return 1;
+		}
+		return 0;
 	}
 }
