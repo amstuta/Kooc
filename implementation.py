@@ -95,7 +95,8 @@ class Implementation:
         inheri.append("Object")
         return inheri
 
-    def create_decl_malloc(self, size, inheri):
+    def create_decl_malloc(self, inheri):
+        size = len(inheri)
         lDecl = []
         d = Declaration()
         res = d.parse("""
@@ -104,7 +105,7 @@ class Implementation:
         void salope()
         {
         %s* self;
-        (Object *)(self)->inheritance = malloc(%d * sizeof(char *) + 1);
+        (Object *)(self)->inheritance = malloc((%d + 1) * sizeof(char *));
         (Object *)(self)->inheritance[%d] = "YOLO";
         (Object *)(self)->inheritance[%d] = NULL;
         }
@@ -157,13 +158,12 @@ class Implementation:
                ', '.join([c._name for c in params]),
                self.ident))
 
-        inheri = self.get_inheritance(self.ident, [])
 
         for decl in res.body:
             if hasattr(decl, '_name') and decl._name == 'new':
                 decl._name = mangler.muckFangle(decl, self.ident)
 
-                decl.body.body[4:4] = self.create_decl_malloc(len(inheri), inheri)
+                decl.body.body[4:4] = self.create_decl_malloc(self.get_inheritance(self.ident, []))
 
                 for dcl in decl.body.body:
                     if isinstance(dcl, cnorm.nodes.ExprStmt):
