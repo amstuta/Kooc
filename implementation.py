@@ -75,7 +75,7 @@ class Implementation:
         void delete(%s *self)
         {
         free((Object*)(self)->name);
-        clean(this);
+        self->vt->clean(self);
         }
         """ % (self.ident, self.ident, self.ident))
 
@@ -83,11 +83,12 @@ class Implementation:
             if isinstance(decl._ctype, cnorm.nodes.FuncType):
                 decl._name = mangler.muckFangle(decl, self.ident)
                 for dcl in decl.body.body:
-                    if hasattr(dcl.expr, 'call_expr') and dcl.expr.call_expr.value == 'clean':
-                        name = decl_keeper.classes[self.ident].members[0]._name
-                        dcl.expr.call_expr.value = name
+                    if hasattr(dcl.expr, 'call_expr') and hasattr(dcl.expr.call_expr, 'params') \
+                       and dcl.expr.call_expr.params[0].value == 'clean':
+                        dcl.expr.call_expr.params[0].value = 'clean$$void'
                 self.imps.append(decl)
 
+                
     def get_inheritance(self, name, inheri):
         if name in decl_keeper.inher.keys():
             inheri.append(decl_keeper.inher[name])
@@ -95,6 +96,7 @@ class Implementation:
         inheri.append("Object")
         return inheri
 
+    
     def create_decl_malloc(self, inheri):
         size = len(inheri)
         lDecl = []
