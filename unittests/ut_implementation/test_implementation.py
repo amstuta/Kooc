@@ -12,6 +12,7 @@ import decl_keeper
 
 class ImplementationTestCase(unittest.TestCase):
     def setUp(self):
+        create_header()
         self.kooc = Kooc()
         decl_keeper.reset()
 

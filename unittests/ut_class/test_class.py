@@ -4,7 +4,6 @@ import sys
 import os
 filePath = os.path.realpath(os.path.dirname(__file__))
 sys.path.append(filePath + '/../..')
-import unittest
 from kooc_class import *
 import cnorm
 import unittest
