@@ -18,6 +18,11 @@ class ImplementationTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
+
+    def rmNull(self, str):
+        return str.replace(' ', '').replace('\n', '')
+
+    
     def moduleTransfo(self, ast):
         for imp in decl_keeper.implementations:
             for i in imp.imps:
@@ -65,19 +70,17 @@ class ImplementationTestCase(unittest.TestCase):
         }
         """
         self.moduleTransfo(res)
-        self.assertEqual(str(res.to_c()).replace(' ', '').replace('\n', ''),
-                         expected.replace(' ', '').replace('\n', ''),
+        self.assertEqual(self.rmNull(str(res.to_c())),
+                         self.rmNull(expected),
                          'Incorrect output for simple implementation test')
 
 
     def test_implementation_second(self):
         res = self.kooc.parse("""
         @module A
-        {
-        }
+        {}
         @module B
-        {
-        }
+        {}
         @implementation A {
         void f() {}
         void f(int a, float b) {}
@@ -98,6 +101,23 @@ class ImplementationTestCase(unittest.TestCase):
         char *Func$B$f$P$char() {}
         """
         self.moduleTransfo(res)
-        self.assertEqual(str(res.to_c()).replace(' ','').replace('\n',''),
-                         expected.replace(' ','').replace('\n',''),
+        self.assertEqual(self.rmNull(str(res.to_c())),
+                         self.rmNull(expected),
                          'Incorrect output for second implementation test')
+
+    def test_implementation_new_simple(self):
+        res = self.kooc.parse("""
+        @class A {
+        void init(int);
+        }
+        @implementation A {
+        void init(int a) {
+        }
+        }
+        """)
+        
+        expected = """
+        
+        """
+
+        
