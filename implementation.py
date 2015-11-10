@@ -105,18 +105,19 @@ class Implementation:
         void salope()
         {
         %s* self;
+        (Object *)(self)->vt = vtable_%s;
         (Object *)(self)->inheritance = malloc((%d + 1) * sizeof(char *));
         (Object *)(self)->inheritance[%d] = "YOLO";
         (Object *)(self)->inheritance[%d] = NULL;
         }
-        """ % (self.ident, self.ident, self.ident, size, size, size))
+        """ % (self.ident, self.ident, self.ident, self.ident, size, size, size))
         for decl in res.body:
             if hasattr(decl, '_name') and decl._name == 'salope':
                 for dcl in decl.body.body:
                     if isinstance(dcl, cnorm.nodes.ExprStmt):
                         if isinstance(dcl.expr.params[len(dcl.expr.params) - 1], cnorm.nodes.Literal):
                             declToChange = dcl
-                        elif isinstance(dcl.expr.params[len(dcl.expr.params) - 1], cnorm.nodes.Id):
+                        elif isinstance(dcl.expr.params[len(dcl.expr.params) - 1], cnorm.nodes.Id) and dcl.expr.params[len(dcl.expr.params) - 1].value == 'NULL':
                             declNull = dcl
                         else:
                             lDecl.append(dcl)
