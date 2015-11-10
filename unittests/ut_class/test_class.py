@@ -25,6 +25,13 @@ class ClassTestCase(unittest.TestCase):
                                  expected.replace(' ','').replace('\n',''),
                                  'Fail test typedef class')
 
+    def moduleTransfo(self, ast):
+        for imp in decl_keeper.implementations:
+            for i in imp.imps:
+                ast.body.append(i)
+            ast.body.extend(imp.virtuals)
+        decl_keeper.clean_implementations()
+
 
     def test_empty_class_struct(self):
         res = self.kooc.parse("""@class A {}""")
@@ -200,6 +207,165 @@ class ClassTestCase(unittest.TestCase):
         int   Func$A$get_int$$int$P$A(A *self);
         extern vt_A vtable_A;
         """
+        self.assertEqual(str(res.to_c()).replace(' ','').replace('\n', ''),
+                         expected.replace(' ','').replace('\n',''),
+                         'Incorrect output for full class test')
+
+    def test_class_complex(self):
+        res = self.kooc.parse("""
+        @class A
+        {
+        @member int i;
+        void  f();
+        float f(int);
+        @virtual int get_int();
+        }
+        @class B : A
+        {
+        @member  int yoho;
+        @virtual int get_int();
+        }
+        """)
+        expected = """
+        typedef struct _kc_A A;
+        typedef struct _kc_vt_A vt_A;
+        
+        struct _kc_vt_A
+        {
+        void (*clean$$void)(Object *);
+        int (*isKindOf$$int$P$char)(Object *, const char *);
+        int (*isKindOf$$int$P$Object)(Object *, Object *);
+        int (*isInstanceOf$$int$P$char)(Object *, const char *);
+        int (*isInstanceOf$$int$P$Object)(Object *, Object *);
+        int (*get_int$$int)(A *self);
+        };
+        struct _kc_A
+        {
+        Object  parent;
+        int     Var$A$i$$int;
+        };
+        A     *Func$A$alloc$P$A();
+        void  Func$A$delete$$void$P$A(A *);
+        void  Func$A$f$$void();
+        float Func$A$f$$float$$int(int);
+        int   Func$A$get_int$$int$P$A(A *self);
+        extern vt_A vtable_A;
+
+        typedef struct _kc_B B;
+        typedef struct _kc_vt_B vt_B;
+        
+        struct _kc_vt_B
+        {
+        void (*clean$$void)(Object *);
+        int (*isKindOf$$int$P$char)(Object *, const char *);
+        int (*isKindOf$$int$P$Object)(Object *, Object *);
+        int (*isInstanceOf$$int$P$char)(Object *, const char *);
+        int (*isInstanceOf$$int$P$Object)(Object *, Object *);
+        int (*get_int$$int)(A *self);
+        };
+        struct _kc_B
+        {
+        A  parent;
+        int Var$B$yoho$$int;
+        };
+        B     *Func$B$alloc$P$B();
+        void  Func$B$delete$$void$P$B(B *);
+        int   Func$B$get_int$$int$P$B(B *self);
+        extern vt_B vtable_B;
+        """
+        self.assertEqual(str(res.to_c()).replace(' ','').replace('\n', ''),
+                         expected.replace(' ','').replace('\n',''),
+                         'Incorrect output for full class test')
+
+
+    def test_class_implicit_virtual(self):
+        res = self.kooc.parse("""
+        @class A
+        {
+        @member int i;
+        void  f();
+        float f(int);
+        @virtual int get_int();
+        }
+        @class B : A
+        {
+        @member  int yoho;
+        @member int get_int();
+        }
+        @implementation B
+        {
+        int get_int()
+        {
+        return 55;
+        }
+        }
+        """)
+        expected = """
+        typedef struct _kc_A A;
+        typedef struct _kc_vt_A vt_A;
+        
+        struct _kc_vt_A
+        {
+        void (*clean$$void)(Object *);
+        int (*isKindOf$$int$P$char)(Object *, const char *);
+        int (*isKindOf$$int$P$Object)(Object *, Object *);
+        int (*isInstanceOf$$int$P$char)(Object *, const char *);
+        int (*isInstanceOf$$int$P$Object)(Object *, Object *);
+        int (*get_int$$int)(A *self);
+        };
+        struct _kc_A
+        {
+        Object  parent;
+        int     Var$A$i$$int;
+        };
+        A     *Func$A$alloc$P$A();
+        void  Func$A$delete$$void$P$A(A *);
+        void  Func$A$f$$void();
+        float Func$A$f$$float$$int(int);
+        int   Func$A$get_int$$int$P$A(A *self);
+        extern vt_A vtable_A;
+
+        typedef struct _kc_B B;
+        typedef struct _kc_vt_B vt_B;
+        
+        struct _kc_vt_B
+        {
+        void (*clean$$void)(Object *);
+        int (*isKindOf$$int$P$char)(Object *, const char *);
+        int (*isKindOf$$int$P$Object)(Object *, Object *);
+        int (*isInstanceOf$$int$P$char)(Object *, const char *);
+        int (*isInstanceOf$$int$P$Object)(Object *, Object *);
+        int (*get_int$$int)(A *self);
+        };
+        struct _kc_B
+        {
+        A  parent;
+        int Var$B$yoho$$int;
+        };
+        B     *Func$B$alloc$P$B();
+        void  Func$B$delete$$void$P$B(B *);
+        int   Func$B$get_int$$int$P$B(B *self);
+        extern vt_B vtable_B;
+
+    vt_B vtable_B = {&Func$Object$clean$$void$P$Object, &Func$Object$isKindOf$$int$P$Object$P$char, &Func$Object$isKindOf$$int$P$Object$P$Object, &Func$Object$isInstanceOf$$int$P$Object$P$char, &Func$Object$isInstanceOf$$int$P$Object$P$Object, &Func$B$get_int$$int$P$B}
+        B *Func$B$alloc$P$B()
+        {
+        B *self;
+        self = malloc(sizeof (B));
+        return (self);
+        }
+        void Func$B$delete$$void$P$B(B *self)
+        {
+        ((Object *)self)->vt->clean$$void(self);
+        }
+
+        Func$B$get_int$$int$P$B()
+        {
+         return 55;
+        }
+        """
+        self.moduleTransfo(res)
+        print(str(res.to_c()))
         self.assertEqual(str(res.to_c()).replace(' ','').replace('\n', ''),
                          expected.replace(' ','').replace('\n',''),
                          'Incorrect output for full class test')

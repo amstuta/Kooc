@@ -2,6 +2,7 @@
 
 import os
 import cnorm
+import subprocess
 from user_class import *
 from module import *
 from implementation import *
@@ -241,8 +242,11 @@ def add_import(self, ast, ident):
         return True
     if Kooc.types == None:
         Kooc.types = ast.ref.types
+    process = subprocess.Popen(["cpp", execPath + '/' + mod_name , execPath + '/' + mod_name + ".tmp"])
+    process.wait()
+
     a = Kooc(True)
-    r = a.parse_file(execPath + '/' + mod_name)
+    r = a.parse_file(execPath + '/' + mod_name + ".tmp")
     for elem in r.body:
         if type(elem) == cnorm.nodes.Decl:
             decl_keeper.ids.append(elem._name)

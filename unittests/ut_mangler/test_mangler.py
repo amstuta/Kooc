@@ -65,5 +65,16 @@ class ManglerTestCase(unittest.TestCase):
                              expected.replace(' ','').replace('\n',''),
                              'Incorrect function mangling')
 
+        def test_mangle_func_ptr(self):
+            res = self.kooc.parse("""@module Ouesh {int *(*yoho)(int a, int b, int c, char *d, char **e, char ******t);}""")
+            #expected = """
+            #extern int *(*yoho)(int a, int b, int c, char *d, char **e, char ******t) Var$Ouesh$yoho$PFunc$int$$int$$int$$int$P$char$PP$char$PPPPPP$char;
+            #"""
+            self.moduleTransfo(res)
+            decl = res.body[0]
+            self.assertEqual(decl._name,
+                             'Var$Ouesh$yoho$PFunc$$$int$$$int$$$int$$P$char$$PP$char$$PPPPPP$charP$int',
+                             'Incorrect function pointer mangling')
+
 
             
