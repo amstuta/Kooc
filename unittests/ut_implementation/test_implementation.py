@@ -23,15 +23,6 @@ class ImplementationTestCase(unittest.TestCase):
     def rmNull(self, str):
         return str.replace(' ', '').replace('\n', '')
 
-
-    def moduleTransfo(self, ast):
-        for imp in decl_keeper.implementations:
-            for i in imp.imps:
-                ast.body.append(i)
-            ast.body.extend(imp.virtuals)
-        decl_keeper.clean_implementations()
-
-
     def test_implementation_simple(self):
         res = self.kooc.parse("""
         @module Test
@@ -70,7 +61,6 @@ class ImplementationTestCase(unittest.TestCase):
         printf("je suis la fonction toto qui prend 1 parametre=%d\n", n);
         }
         """
-        self.moduleTransfo(res)
         self.assertEqual(self.rmNull(str(res.to_c())),
                          self.rmNull(expected),
                          'Incorrect output for simple implementation test')
@@ -101,7 +91,6 @@ class ImplementationTestCase(unittest.TestCase):
         void Func$B$f$$void$$int$$float(int a, float b) {}
         char *Func$B$f$P$char() {}
         """
-        self.moduleTransfo(res)
         self.assertEqual(self.rmNull(str(res.to_c())),
                          self.rmNull(expected),
                          'Incorrect output for second implementation test')
@@ -130,7 +119,6 @@ class ImplementationTestCase(unittest.TestCase):
         return (self);
         }
         """
-        self.moduleTransfo(res)
         for decl in res.body:
             if hasattr(decl, '_name') and decl._name == 'Func$A$new$P$A$$int' and hasattr(decl, 'body'):
                 self.assertEqual(self.rmNull(str(decl.to_c())),
@@ -176,7 +164,6 @@ class ImplementationTestCase(unittest.TestCase):
         return (self);
         }
         """
-        self.moduleTransfo(res)
         for decl in res.body:
             if hasattr(decl, '_name') and decl._name == 'Func$B$new$P$B$$int' and hasattr(decl, 'body'):
                 self.assertEqual(self.rmNull(str(decl.to_c())),
@@ -229,7 +216,6 @@ class ImplementationTestCase(unittest.TestCase):
         }
         """
 
-        self.moduleTransfo(res)
         for decl in res.body:
             if hasattr(decl, '_name') and decl._name == 'Func$A$new$P$A$$int' and hasattr(decl, 'body'):
                 self.assertEqual(self.rmNull(str(decl.to_c())),
@@ -261,7 +247,6 @@ class ImplementationTestCase(unittest.TestCase):
         return (self);
         }
         """
-        self.moduleTransfo(res)
         for decl in res.body:
             if hasattr(decl, '_name') and decl._name == 'Func$A$alloc$P$A' and hasattr(decl, 'body'):
                 self.assertEqual(self.rmNull(str(decl.to_c())),
@@ -286,7 +271,6 @@ class ImplementationTestCase(unittest.TestCase):
         ((Object *) self)->vt->clean$$void(self);
         }
         """
-        self.moduleTransfo(res)
         for decl in res.body:
             if hasattr(decl, '_name') and decl._name == 'Func$A$delete$$void$P$A' and hasattr(decl, 'body'):
                 self.assertEqual(self.rmNull(str(decl.to_c())),

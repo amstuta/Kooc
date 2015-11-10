@@ -14,7 +14,6 @@ class ClassTestCase(unittest.TestCase):
         create_header()
         self.kooc = Kooc()
 
-        
     def test_typedef_class(self):
         res = self.kooc.parse(""" @class A {} """)
         expected = "typedef struct _kc_A A;"
@@ -42,7 +41,7 @@ class ClassTestCase(unittest.TestCase):
 
     def test_member_class_struct(self):
         res = self.kooc.parse("""
-        @class A 
+        @class A
         {
         @member int i;
         @member float i;
@@ -104,12 +103,11 @@ class ClassTestCase(unittest.TestCase):
                 #                 'Fail test virtual class: struct')
 
 
-            
 
     def test_inheritance_simple(self):
         res = self.kooc.parse("""
         @class A {}
-        @class B : A {} 
+        @class B : A {}
         """)
         expected = """
         struct _kc_B {
@@ -177,7 +175,7 @@ class ClassTestCase(unittest.TestCase):
         expected = """
         typedef struct _kc_A A;
         typedef struct _kc_vt_A vt_A;
-        
+
         struct _kc_vt_A
         {
         void (*clean$$void)(Object *);
@@ -202,8 +200,5 @@ class ClassTestCase(unittest.TestCase):
         self.assertEqual(str(res.to_c()).replace(' ','').replace('\n', ''),
                          expected.replace(' ','').replace('\n',''),
                          'Incorrect output for full class test')
-
-
-        
 
 
