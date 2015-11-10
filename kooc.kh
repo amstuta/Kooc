@@ -5,6 +5,7 @@ struct _kc_Object
 {
 	void *vt;
 	char *name;
+	char **inheritance;
 };
 
 

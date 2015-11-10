@@ -88,13 +88,58 @@ class Implementation:
                         dcl.expr.call_expr.value = name
                 self.imps.append(decl)
 
+    def get_inheritance(self, name, inheri):
+        if name in decl_keeper.inher.keys():
+            inheri.append(decl_keeper.inher[name])
+            return self.get_inheritance(decl_keeper.inher[name], inheri)
+        inheri.append("Object")
+        return inheri
+
+    def create_decl_malloc(self, size, inheri):
+        lDecl = []
+        d = Declaration()
+        res = d.parse("""
+        typedef struct _kc_Object Object;
+        typedef struct _kc_%s %s;
+        void salope()
+        {
+        %s* self;
+        (Object *)(self)->inheritance = malloc(%d * sizeof(char *) + 1);
+        (Object *)(self)->inheritance[%d] = "YOLO";
+        (Object *)(self)->inheritance[%d] = NULL;
+        }
+        """ % (self.ident, self.ident, self.ident, size, size, size))
+        for decl in res.body:
+            if hasattr(decl, '_name') and decl._name == 'salope':
+                for dcl in decl.body.body:
+                    if isinstance(dcl, cnorm.nodes.ExprStmt):
+                        if isinstance(dcl.expr.params[len(dcl.expr.params) - 1], cnorm.nodes.Literal):
+                            declToChange = dcl
+                        elif isinstance(dcl.expr.params[len(dcl.expr.params) - 1], cnorm.nodes.Id):
+                            declNull = dcl
+                        else:
+                            lDecl.append(dcl)
+
+        declTmp = declToChange
+        for idx, decl in enumerate(inheri):
+            for dcl in declTmp.expr.params:
+                if isinstance(dcl, cnorm.nodes.Literal):
+                    print(dcl.value)
+                    dcl.value = ("\"" + decl + "\"")
+            for dcl in declTmp.expr.params[0].params:
+                if isinstance(dcl, cnorm.nodes.Array):
+                    dcl.params[0].value = str(idx)
+            lDecl.append(deepcopy(declTmp))
+        lDecl.append(declNull)
+        return lDecl
+
 
     # Créé une fct new pour chaque init rencontré
     def create_new_fct(self, ini):
         params = []
         if len(ini._ctype._params) >= 1:
             params = ini._ctype._params[1:]
-        
+
         d = Declaration()
         res = d.parse("""
         typedef struct _kc_Object Object;
@@ -113,9 +158,14 @@ class Implementation:
                ', '.join([c._name for c in params]),
                self.ident))
 
+        inheri = self.get_inheritance(self.ident, [])
+
         for decl in res.body:
             if hasattr(decl, '_name') and decl._name == 'new':
                 decl._name = mangler.muckFangle(decl, self.ident)
+
+                decl.body.body[4:4] = self.create_decl_malloc(len(inheri), inheri)
+
                 for dcl in decl.body.body:
                     if isinstance(dcl, cnorm.nodes.ExprStmt):
                         if isinstance(dcl.expr, cnorm.nodes.Binary) and \
@@ -126,7 +176,6 @@ class Implementation:
                         elif isinstance(dcl.expr, cnorm.nodes.Func):
                             dcl.expr.call_expr.value = ini._name
                 self.imps.append(decl)
-                
 
     # Ajoute le parametre self aux parametres de la fct membre
     def check_param(self, decl):

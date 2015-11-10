@@ -1,5 +1,7 @@
 typedef struct _kc_Object Object;
 
+#include <string.h>
+
 @implementation Object
 {
 	void clean(Object *self)
