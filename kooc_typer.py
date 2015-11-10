@@ -1,7 +1,8 @@
 from pyrser import meta, parsing
 from cnorm.nodes import *
 from kooc_class import *
-
+from module import Module
+from user_class import Class
 
 class Type():
     def __init__(self, name):
@@ -59,6 +60,17 @@ class Function(Type):
     def push_param(self, param_type):
         self.params.append(param_type)
 
+    def param(self, i):
+        return self.params[i]
+
+    def cmp_params(self, other_func):
+        if len(other_func.params) != len(self.params):
+            return False
+        for (i, p) in enumerate(self.params):
+            if p != other_func.param(i):
+                return False
+        return True
+
     def __eq__(self, other):
         if isinstance(other, Variable):
             return self == other.v_type
@@ -95,6 +107,13 @@ class Struct(Type):
 
     def add_field(self, field):
         self.fields.append(field)
+
+    def funcs(self, name):
+        o = []
+        for f in self.fields:
+            if isinstance(f, Variable) and f.name == name and isinstance(f.v_type, Function):
+                o.append(f.v_type)
+        return o
 
     def __eq__(self, other):
         if isinstance(other, Variable):
@@ -204,19 +223,17 @@ class DefScope():
         scope = self
         while not scope is None:
             if name in scope.defs:
-                self.expr_type = scope.defs[name]
-                return self.expr_type
+                return scope.defs[name]
             scope = scope.parent
-        raise Exception("symbole `{}` non défini".format(name)) #TODO(lakh): throw
+        return None
 
     def find_decl(self, name):
         scope = self
         while not scope is None:
             if name in scope.decls:
-                self.expr_type = scope.decls[name]
-                return self.expr_type
+                return scope.decls[name]
             scope = scope.parent
-        raise Exception("symbole `{}` non défini".format(self.value)) #TODO(lakh): throw
+        return None
 
 @meta.add_method(parsing.Node)
 def resolve_type(self, scope = None, type_set = None):
@@ -302,7 +319,19 @@ def resolve_type(self, scope, type_set):
 
 @meta.add_method(Id)
 def resolve_type(self, scope, type_set):
-    return scope.find_def(self.value)
+    t = scope.find_def(self.value)
+    if not t is None:
+        self.expr_type = t
+        return t
+    elif self.value in decl_keeper.modules:
+        module = decl_keeper.modules[self.value]
+        module.resolve_type(DefScope(), None)
+        return module.expr_type
+    elif self.value in decl_keeper.classes:
+        c = decl_keeper.classes[self.value]
+        c.resolve_type(DefScope(), None)
+        return c.expr_type
+    raise Exception("symbole `{}` non défini".format(self.value)) #TODO(lakh): throw
 
 @meta.add_method(Literal)
 def resolve_type(self, scope, type_set):
@@ -317,5 +346,41 @@ def resolve_type(self, scope, type_set):
     self.expr_type = self.ctype.resolve_type(scope)
     self.expr.resolve_type(scope, TypesSet([ self.expr_type ]))
     return self.expr_type
+
+@meta.add_method(KoocCall)
+def resolve_type(self, scope, type_set):
+    struct_type = self.call_expr.resolve_type(scope, type_set) #TODO(lakh): verifier Struct
+    if self.call:
+        gtype = Function(None)
+        f_types = struct_type.funcs(self.member)
+        for (i, p) in enumerate(self.params):
+            tset = TypesSet()
+            for f_type in f_types:
+                param_t = f_type.param(i)
+                tset.push(f_type)
+            f_type = p.resolve_type(scope, tset)
+            if not isinstance(f_type, Type):
+                raise Exception("Type ambigu")
+            gtype.push_param(f_type)
+        result = []
+        for f_type in f_types:
+            if f_type.cmp_params(gtype):
+                result.append(f_type)
+        if len(result) == 0:
+            raise Exception("pas d'overload disponible pour {}".format(self.member))
+        if len(result) > 1:
+            raise Exception("appel fonction ambigu pour {}".format(self.member))
+        self.expr_type = result[0].return_type
+        return self.expr_type
+    else:
+        pass
+
+@meta.add_method(Module)
+def resolve_type(self, scope, type_set):
+    self.expr_type = Struct(self.ident)
+    for decl in self.decls:
+        t = decl.resolve_type(DefScope(), None)
+        n = decl.saved_name
+        self.expr_type.add_field(Variable(n, t))
 
 # End Expr resolver

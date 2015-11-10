@@ -204,23 +204,21 @@ class TyperTestCase(unittest.TestCase):
             {
                 int a;
                 float b;
-            };
 
-            struct B
-            {
-                int f(int x);
+                int f(int a);
+                int f(float a);
             };
-
-            struct B c;
 
             int main(int argc, char **argv)
             {
-                struct B b;
-                return [A.a] + [A f :1];
-                return [b f :1] + [c f :2];
+                return [A f :[A f :0]];
+                return [A f :0];
             }
             """)
-            print(ast.body)
+            ast.resolve_type()
+            expected = Function(int_type, [ int_type ])
+            self.assertTrue(ast.body[0].body.body[0].expr.expr_type, expected)
+            self.assertTrue(ast.body[0].body.body[1].expr.expr_type, expected)
 
         def test_cast(self):
             ast = self.kooc.parse("""

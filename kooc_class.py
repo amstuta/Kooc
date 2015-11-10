@@ -43,7 +43,7 @@ class Kooc(Grammar, Declaration):
     kooc_call = [
             
         '['
-            Base.id:i #kooc_call(_, i)
+            primary_expression:i #kooc_call(_, i)
             [
                 [ '.' Base.id:mbr #kooc_call_member(_, mbr) ]
                 |
@@ -111,7 +111,7 @@ def kooc_cast(self, node, t, expr):
 
 @meta.hook(Kooc)
 def kooc_call(self, node, i):
-    node.set(KoocCall(self.value(i)))
+    node.set(KoocCall(i))
     return True
 
 @meta.hook(Kooc)

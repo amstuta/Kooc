@@ -10,6 +10,7 @@ class Module:
         self.decls = []
         self.decls_vars = []
         for st in statement.body:
+            st.saved_name = st._name
             st._name = mangler.muckFangle(st, ident)
             if not isinstance(st._ctype, cnorm.nodes.FuncType):
                 self.decls_vars.append(st)
