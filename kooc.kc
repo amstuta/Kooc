@@ -1,20 +1,36 @@
 typedef struct _kc_Object Object;
 
 #include <string.h>
+#include <stdlib.h>
 
 @implementation Object
 {
 	void clean(Object *self)
 	{
-		//free(self->name);
 	}
 
 	int isKindOf(Object *self, const char *name)
 	{
+		int i = 0;
+		while (self->inheritance[i] != NULL)
+		{
+		     if (strcmp(self->inheritance[i], name) == 0)
+			return 0;
+	 	   i++;
+		}
+		return 1;
 	}
 
 	int isKindOf(Object *self, Object *a)
 	{
+		int i = 0;
+		while (self->inheritance[i] != NULL)
+		{
+		     if (strcmp(self->inheritance[i], a->name) == 0)
+		      	return 0;
+		   i++;
+		}
+		return 1;
 	}
 
 	int isInstanceOf(Object *self, const char *name)

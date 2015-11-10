@@ -74,8 +74,7 @@ class Implementation:
         typedef struct _kc_%s %s;
         void delete(%s *self)
         {
-        free((Object*)(self)->name);
-        self->vt->clean(self);
+        ((Object*)self)->vt->clean(self);
         }
         """ % (self.ident, self.ident, self.ident))
 
@@ -104,17 +103,17 @@ class Implementation:
         res = d.parse("""
         typedef struct _kc_Object Object;
         typedef struct _kc_%s %s;
-        void salope()
+        void dummy()
         {
         %s* self;
-        (Object *)(self)->vt = vtable_%s;
-        (Object *)(self)->inheritance = malloc((%d + 1) * sizeof(char *));
-        (Object *)(self)->inheritance[%d] = "YOLO";
-        (Object *)(self)->inheritance[%d] = NULL;
+        ((Object *)self)->vt = vtable_%s;
+        ((Object *)self)->inheritance = malloc((%d + 1) * sizeof(char *));
+        ((Object *)self)->inheritance[%d] = "YOLO";
+        ((Object *)self)->inheritance[%d] = NULL;
         }
         """ % (self.ident, self.ident, self.ident, self.ident, size, size, size))
         for decl in res.body:
-            if hasattr(decl, '_name') and decl._name == 'salope':
+            if hasattr(decl, '_name') and decl._name == 'dummy':
                 for dcl in decl.body.body:
                     if isinstance(dcl, cnorm.nodes.ExprStmt):
                         if isinstance(dcl.expr.params[len(dcl.expr.params) - 1], cnorm.nodes.Literal):
@@ -129,9 +128,10 @@ class Implementation:
             for dcl in declTmp.expr.params:
                 if isinstance(dcl, cnorm.nodes.Literal):
                     dcl.value = ("\"" + decl + "\"")
-            for dcl in declTmp.expr.params[0].params:
-                if isinstance(dcl, cnorm.nodes.Array):
-                    dcl.params[0].value = str(idx)
+            declTmp.expr.params[0].params[0].value = str(idx)
+            #for dcl in declTmp.expr.params[0].params:
+             #   if isinstance(dcl, cnorm.nodes.Array):
+              #      dcl.params[0].value = str(idx)
             lDecl.append(deepcopy(declTmp))
         lDecl.append(declNull)
         return lDecl
@@ -152,7 +152,7 @@ class Implementation:
         %s* self;
         self = alloc();
         init(self, %s);
-        (Object*)(self)->name = "%s";
+        ((Object*)self)->name = "%s";
         return (self);
         }
         """ % (self.ident, self.ident, self.ident,
@@ -161,24 +161,25 @@ class Implementation:
                ', '.join([c._name for c in params]),
                self.ident))
 
-
         for decl in res.body:
             if hasattr(decl, '_name') and decl._name == 'new':
                 decl._name = mangler.muckFangle(decl, self.ident)
-
                 decl.body.body[4:4] = self.create_decl_malloc(self.get_inheritance(self.ident, []))
 
                 for dcl in decl.body.body:
                     if isinstance(dcl, cnorm.nodes.ExprStmt):
-                        if isinstance(dcl.expr, cnorm.nodes.Binary) and \
-                           isinstance(dcl.expr.params[0], cnorm.nodes.Cast):
+                        if isinstance(dcl.expr, cnorm.nodes.Binary) and\
+                           (isinstance(dcl.expr.params[0], cnorm.nodes.Arrow) or \
+                            isinstance(dcl.expr.params[0], cnorm.nodes.Array)):
                             pass
                         elif isinstance(dcl.expr, cnorm.nodes.Binary):
                             dcl.expr.params[1].call_expr.value = self.alloc_fct._name
+                        
                         elif isinstance(dcl.expr, cnorm.nodes.Func):
                             dcl.expr.call_expr.value = ini._name
                 self.imps.append(decl)
 
+                
     # Ajoute le parametre self aux parametres de la fct membre
     def check_param(self, decl):
         if isinstance(decl._ctype, cnorm.nodes.FuncType):
