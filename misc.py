@@ -8,16 +8,6 @@ from kooc_class import Kooc
 execPath = os.getcwd()
 filePath = os.path.realpath(os.path.dirname(__file__))
 
-def moduleTransfo(ast):
-    for mod in decl_keeper.modules:
-        if decl_keeper.modules[mod].recurs == False:
-            for decl in decl_keeper.modules[mod].decls:
-                ast.body.append(decl)
-    for imp in decl_keeper.implementations:
-        for i in imp.imps:
-            ast.body.append(i)
-        ast.body.extend(imp.virtuals)
-
 
 def add_include(ast):
     raw = cnorm.nodes.Raw('#include \"kooc.h\"\n')
@@ -64,7 +54,6 @@ def create_header():
     a = Kooc()
     res_h = a.parse_file(filePath + '/kooc.kh')
     res_h.body.insert(0, cnorm.nodes.Raw('#ifndef KOOC_H\n#define KOOC_H\n'))
-    moduleTransfo(res_h)
     decl_keeper.create_typedef_vt()
     res_h.body.append(cnorm.nodes.Raw('#endif\n'))
     res_h.body.insert(3, decl_keeper.typedef_vt_object)
