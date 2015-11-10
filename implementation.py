@@ -74,8 +74,7 @@ class Implementation:
         typedef struct _kc_%s %s;
         void delete(%s *self)
         {
-        free(((Object*)self)->name);
-        self->vt->clean(self);
+        ((Object*)self)->vt->clean(self);
         }
         """ % (self.ident, self.ident, self.ident))
 
@@ -129,9 +128,10 @@ class Implementation:
             for dcl in declTmp.expr.params:
                 if isinstance(dcl, cnorm.nodes.Literal):
                     dcl.value = ("\"" + decl + "\"")
-            for dcl in declTmp.expr.params[0].params:
-                if isinstance(dcl, cnorm.nodes.Array):
-                    dcl.params[0].value = str(idx)
+            declTmp.expr.params[0].params[0].value = str(idx)
+            #for dcl in declTmp.expr.params[0].params:
+             #   if isinstance(dcl, cnorm.nodes.Array):
+              #      dcl.params[0].value = str(idx)
             lDecl.append(deepcopy(declTmp))
         lDecl.append(declNull)
         return lDecl
