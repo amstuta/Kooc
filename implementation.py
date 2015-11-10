@@ -124,7 +124,6 @@ class Implementation:
         for idx, decl in enumerate(inheri):
             for dcl in declTmp.expr.params:
                 if isinstance(dcl, cnorm.nodes.Literal):
-                    print(dcl.value)
                     dcl.value = ("\"" + decl + "\"")
             for dcl in declTmp.expr.params[0].params:
                 if isinstance(dcl, cnorm.nodes.Array):
