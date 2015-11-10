@@ -12,6 +12,7 @@ class Class:
         self.protos = []
         self.vt = None
         self.inst_vt = None
+        self.non_mangled = []
 
         # Ajoute aux membres les fcts qui recoivent une instance de l'objet en first param
         self.check_first_param(statement)
@@ -26,12 +27,14 @@ class Class:
                         if (i._name == 'init'):
                             self.add_new_proto(i)
                         self.add_self_param(i)
+                        self.non_mangled.append(deepcopy(i))
                         i._name = mangler.muckFangle(i, class_name)
                         self.members.append(i)
                 else:
                     if (m._name == 'init'):
                         self.add_new_proto(m)
                     self.add_self_param(m)
+                    self.non_mangled.append(deepcopy(m))
                     m._name = mangler.muckFangle(m, class_name)
                     self.members.append(m)
 
@@ -54,7 +57,6 @@ class Class:
             if isinstance(d, cnorm.nodes.BlockStmt):
                 for i in d.body:
                     i._name = mangler.muckFangle(i, class_name)
-
                     if not isinstance(i._ctype, cnorm.nodes.FuncType):
                         self.decls_vars.append(i)
                         tmp = deepcopy(i)
@@ -144,7 +146,7 @@ class Class:
             self.add_self_virtuals(decl)
             self.vt = decl
             return decl
-
+        
 
     def register_non_members(self):
         non_mbrs = []
@@ -162,6 +164,7 @@ class Class:
         decl = cnorm.nodes.Decl('alloc', ctype)
         dec_n = mangler.muckFangle(decl, self.ident)
         decl._name = dec_n
+        setattr(decl, 'save_name', 'alloc')
         self.protos.append(decl)
 
 
@@ -174,6 +177,7 @@ class Class:
                ', '.join([str(c.to_c()).rstrip() for c in decl._ctype.params]).replace(';', '')))
         dcl = res.body[1]
         dcl._name = mangler.muckFangle(dcl, self.ident)
+        setattr(decl, 'save_name', 'new')
         self.protos.append(dcl)
 
 
@@ -183,11 +187,12 @@ class Class:
         typedef struct _kc_%s %s;
         void delete(%s*);
         """ % (self.ident, self.ident, self.ident))
-
         decl = res.body[1]
         decl._name = mangler.muckFangle(decl, self.ident)
+        setattr(decl, 'save_name', 'delete')
         self.members.append(decl)
 
+        
     def add_self_virtuals(self, decl):
         for vr in self.virtuals:
             vr_name = mangler.mimpleSangle(self.virtuals[vr])
@@ -221,7 +226,6 @@ class Class:
             m_inst_vt = decl_keeper.obj_vtable
         blockInit = deepcopy(m_inst_vt._assign_expr)
 
-        ## + voir si on peut redeclarer une fct virtual sans le mot cle
         # Réassignation des pointeurs
         size_b = len(blockInit.body)
         size_v = len(self.vt._ctype.fields)
@@ -243,15 +247,28 @@ class Class:
 
         decl = cnorm.nodes.Decl('vtable_%s' % self.ident, cnorm.nodes.PrimaryType('vt_%s' % self.ident))
         setattr(decl, '_assign_expr', blockInit)
-        
-        self.inst_vt = decl
-        self.mangle_virtuals()
 
+        self.inst_vt = decl
+        self.add_virtual_members()
+        self.mangle_virtuals()
+        
         ext = deepcopy(self.inst_vt)
         delattr(ext, '_assign_expr')
         ext._ctype._storage = cnorm.nodes.Storages.EXTERN
         
         return ext
+
+
+    # Change le lien vers la fct virtuelle
+    # qd le mot-clé n'a pas été mis
+    def add_virtual_members(self):
+        for decl in self.non_mangled:
+            vir_name = mangler.mimpleSangle(decl)
+            for idx, dcl in enumerate(self.vt._ctype.fields):
+                if dcl._name == vir_name:
+                    m_name = mangler.muckFangle(decl, self.ident)
+                    self.inst_vt._assign_expr.body[idx].params[0].value = m_name
+                    
 
 
     # Mangle les nom des prototypes de virtuals
