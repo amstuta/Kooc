@@ -134,7 +134,7 @@ class ClassTestCase(unittest.TestCase):
         }
         """)
         expected = """
-        vt_A vtable_A = { &Func$Object$clean$$void$P$Object, &Func$Object$isKindOf$$int$P$Object$P$char, &Func$Object$isKindOf$$int$P$Object$P$Object, &Func$Object$isInstanceOf$$int$P$Object$P$char, &Func$Object$isInstanceOf$$int$P$Object$P$Object, &Func$A$get_void$$void$P$A };
+        extern vt_A vtable_A;
         """
         for decl in res.body:
             if hasattr(decl, '_assign_expr') and isinstance(decl._assign_expr, cnorm.nodes.BlockInit):
@@ -155,7 +155,7 @@ class ClassTestCase(unittest.TestCase):
         }
         """)
         expected = """
-        vt_B vtable_B = { &Func$Object$clean$$void$P$Object, &Func$Object$isKindOf$$int$P$Object$P$char, &Func$Object$isKindOf$$int$P$Object$P$Object, &Func$Object$isInstanceOf$$int$P$Object$P$char, &Func$Object$isInstanceOf$$int$P$Object$P$Object, &Func$A$get_void$$void$P$A , &Func$B$izi$$void$P$B };
+        extern vt_B vtable_B;
         """
         for decl in res.body:
             if hasattr(decl, '_name') and decl._name == 'vtable_B':
@@ -194,11 +194,11 @@ class ClassTestCase(unittest.TestCase):
         int     Var$A$i$$int;
         };
         A     *Func$A$alloc$P$A();
+        void  Func$A$delete$$void$P$A(A *);
         void  Func$A$f$$void();
         float Func$A$f$$float$$int(int);
         int   Func$A$get_int$$int$P$A(A *self);
-
-       vt_A vtable_A = { &Func$Object$clean$$void$P$Object, &Func$Object$isKindOf$$int$P$Object$P$char, &Func$Object$isKindOf$$int$P$Object$P$Object, &Func$Object$isInstanceOf$$int$P$Object$P$char, &Func$Object$isInstanceOf$$int$P$Object$P$Object, &Func$A$get_int$$int$P$A };
+        extern vt_A vtable_A;
         """
         self.assertEqual(str(res.to_c()).replace(' ','').replace('\n', ''),
                          expected.replace(' ','').replace('\n',''),
