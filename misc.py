@@ -61,9 +61,24 @@ def create_header():
     outFile = execPath + '/kooc.h'
     write_file_out(outFile, res_h)
     res_c = a.parse_file(filePath + '/kooc.kc')
+    mangle_object_calls(res_c)
     res_c.body.append(decl_keeper.instanciate_vtable())
-    #res_c.body.pop(0)
     outFile = execPath + '/kooc.c'
     write_file_out(outFile, res_c)
-
     decl_keeper.clean_implementations()
+
+
+def mangle_object_calls(ast):
+    alloc_name = None
+    init_name = None
+    for decl in ast.body:
+        if hasattr(decl, '_name') and 'alloc' in decl._name:
+            alloc_name = decl._name
+        elif hasattr(decl, '_name') and 'init' in decl._name:
+            init_name = decl._name
+        elif hasattr(decl, '_name') and 'new' in decl._name:
+            decl.body.body[1].expr.params[1].call_expr.value = alloc_name
+            decl.body.body[2].expr.call_expr.value = init_name
+        elif hasattr(decl, '_name') and 'delete' in decl._name:
+            clean_name = decl_keeper.typedef_vt_object._ctype.fields[0]._name
+            decl.body.body[0].expr.call_expr.params[0].value = clean_name

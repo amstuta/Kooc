@@ -29,7 +29,7 @@ class Implementation:
         ret = self.check_param(imp)
         if ret != None:
             self.imps.append(ret)
-            if '$init$' in ret._name:
+            if '$init$' in ret._name and self.ident in decl_keeper.classes:
                 self.create_new_fct(ret)
         else:
             imp._name = mangler.muckFangle(imp, self.ident)
@@ -122,8 +122,6 @@ class Implementation:
                                 declNull = dcl
                             else:
                                 declToChange = dcl
-                        #elif isinstance(dcl.expr.params[len(dcl.expr.params) - 1], cnorm.nodes.Id) and dcl.expr.params[len(dcl.expr.params) - 1].value == '0':
-                        #    declNull = dcl
                         else:
                             lDecl.append(dcl)
 
@@ -133,9 +131,6 @@ class Implementation:
                 if isinstance(dcl, cnorm.nodes.Literal):
                     dcl.value = ("\"" + decl + "\"")
             declTmp.expr.params[0].params[0].value = str(idx)
-            #for dcl in declTmp.expr.params[0].params:
-             #   if isinstance(dcl, cnorm.nodes.Array):
-              #      dcl.params[0].value = str(idx)
             lDecl.append(deepcopy(declTmp))
         lDecl.append(declNull)
         return lDecl

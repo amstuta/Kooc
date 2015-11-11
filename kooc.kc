@@ -1,4 +1,5 @@
 typedef struct _kc_Object Object;
+typedef struct _kc_vt_Object vt_Object;
 
 #include <string.h>
 #include <stdlib.h>
@@ -51,5 +52,36 @@ typedef struct _kc_Object Object;
 			return 1;
 		}
 		return 0;
+	}
+
+	const char *name_of_interface(Object *self)
+	{
+		return self->name;
+	}
+
+	void init(Object *self)
+	{
+	}
+
+	Object *alloc()
+	{
+		Object *self = malloc(sizeof(Object));
+		return self;
+	}
+
+	Object *new()
+	{
+		Object *self;
+		self = alloc();
+		init(self);
+		self->name = "Object";
+		self->vt = &vtable_Object;
+		self->inheritance = 0;
+		return self;
+	}
+
+	void delete(Object *self)
+	{
+		((vt_Object*)self->vt)->clean(self);
 	}
 }
