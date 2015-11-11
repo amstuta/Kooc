@@ -3,6 +3,7 @@ import os
 from os.path import isfile
 from sys import argv
 import decl_keeper
+import subprocess
 from kooc_class import Kooc
 
 execPath = os.getcwd()
@@ -59,11 +60,9 @@ def create_header():
     res_h.body.insert(3, decl_keeper.typedef_vt_object)
     outFile = execPath + '/kooc.h'
     write_file_out(outFile, res_h)
-
     res_c = a.parse_file(filePath + '/kooc.kc')
     res_c.body.append(decl_keeper.instanciate_vtable())
-    res_c.body.pop(0)
-    res_c.body.extend(decl_keeper.implementations[0].imps)
+    #res_c.body.pop(0)
     outFile = execPath + '/kooc.c'
     write_file_out(outFile, res_c)
 

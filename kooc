@@ -28,7 +28,7 @@ def main():
         add_defines(res, outFile)
     write_file_out(outFile, res)
     return 0
-    
-    
+
+
 if __name__ == '__main__':
     main()

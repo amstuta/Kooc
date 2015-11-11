@@ -16,7 +16,7 @@ class Implementation:
         if self.ident in decl_keeper.classes:
             self.create_alloc_fct()
             self.create_delete_fct()
-            
+
         for i in imp.body:
             if isinstance(i, cnorm.nodes.BlockStmt):
                 for elem in i.body:
@@ -58,7 +58,7 @@ class Implementation:
         return (self);
         }
         """ % (self.ident, self.ident, self.ident, self.ident, self.ident))
-        
+
         for decl in res.body:
             if isinstance(decl._ctype, cnorm.nodes.FuncType):
                 decl._name = mangler.muckFangle(decl, self.ident)
@@ -72,11 +72,12 @@ class Implementation:
         res = d.parse("""
         typedef struct _kc_Object Object;
         typedef struct _kc_%s %s;
+        typedef struct _kc_vt_%s vt_%s;
         void delete(%s *self)
         {
-        ((Object*)self)->vt->clean(self);
+        ((vt_%s*)((Object*)self)->vt)->clean(self);
         }
-        """ % (self.ident, self.ident, self.ident))
+        """ % (self.ident, self.ident, self.ident, self.ident, self.ident, self.ident))
 
         for decl in res.body:
             if isinstance(decl._ctype, cnorm.nodes.FuncType):
@@ -87,7 +88,7 @@ class Implementation:
                         dcl.expr.call_expr.params[0].value = 'clean$$void'
                 self.imps.append(decl)
 
-                
+
     def get_inheritance(self, name, inheri):
         if name in decl_keeper.inher.keys():
             inheri.append(decl_keeper.inher[name])
@@ -95,7 +96,7 @@ class Implementation:
         inheri.append("Object")
         return inheri
 
-    
+
     def create_decl_malloc(self, inheri):
         size = len(inheri)
         lDecl = []
@@ -106,10 +107,10 @@ class Implementation:
         void dummy()
         {
         %s* self;
-        ((Object *)self)->vt = vtable_%s;
+        ((Object *)self)->vt = &vtable_%s;
         ((Object *)self)->inheritance = malloc((%d + 1) * sizeof(char *));
         ((Object *)self)->inheritance[%d] = "YOLO";
-        ((Object *)self)->inheritance[%d] = NULL;
+        ((Object *)self)->inheritance[%d] = 0;
         }
         """ % (self.ident, self.ident, self.ident, self.ident, size, size, size))
         for decl in res.body:
@@ -117,9 +118,12 @@ class Implementation:
                 for dcl in decl.body.body:
                     if isinstance(dcl, cnorm.nodes.ExprStmt):
                         if isinstance(dcl.expr.params[len(dcl.expr.params) - 1], cnorm.nodes.Literal):
-                            declToChange = dcl
-                        elif isinstance(dcl.expr.params[len(dcl.expr.params) - 1], cnorm.nodes.Id) and dcl.expr.params[len(dcl.expr.params) - 1].value == 'NULL':
-                            declNull = dcl
+                            if dcl.expr.params[len(dcl.expr.params) - 1].value == '0':
+                                declNull = dcl
+                            else:
+                                declToChange = dcl
+                        #elif isinstance(dcl.expr.params[len(dcl.expr.params) - 1], cnorm.nodes.Id) and dcl.expr.params[len(dcl.expr.params) - 1].value == '0':
+                        #    declNull = dcl
                         else:
                             lDecl.append(dcl)
 

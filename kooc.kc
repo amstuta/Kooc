@@ -2,6 +2,8 @@ typedef struct _kc_Object Object;
 
 #include <string.h>
 #include <stdlib.h>
+#include "kooc.h"
+
 
 @implementation Object
 {
