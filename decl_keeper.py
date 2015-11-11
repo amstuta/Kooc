@@ -14,7 +14,6 @@ obj_vtable = None
 
 def create_typedef_vt():
 
-    # Problème mangling
     d = Declaration()
     res = d.parse(
         '''

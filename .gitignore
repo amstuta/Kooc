@@ -132,3 +132,6 @@ tramp
 # cask packages
 .cask/
 
+annexes/tmp/
+tests/
+unittests/kooc.*

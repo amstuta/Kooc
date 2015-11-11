@@ -1,4 +1,4 @@
-f#!/usr/bin/env python
+#!/usr/bin/env python
 
 import sys
 import os
@@ -9,7 +9,7 @@ import cnorm
 from kooc_class import *
 
 class ImportTestCase(unittest.TestCase):
-    
+
         def setUp(self):
             self.kooc = Kooc()
 

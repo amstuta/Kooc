@@ -2,6 +2,7 @@
 
 import os
 import cnorm
+import subprocess
 from user_class import *
 from module import *
 from implementation import *
@@ -58,7 +59,7 @@ class Kooc(Grammar, Declaration):
     ]
 
     declaration = [Declaration.declaration | module | import | implementation | class]
-    module = ["@module" id :i Statement.compound_statement :st #add_module(st, i)]
+    module = ["@module" id :i Statement.compound_statement :st #add_module(current_block, st, i)]
     import = ["@import" '"' [id ".kh"] :i '"' #add_import(current_block, i)]
 
 
@@ -79,7 +80,7 @@ class Kooc(Grammar, Declaration):
       class_compound_statement :st #add_class(current_block, class_name, st)
     ]
 
-    implementation = ["@implementation" id :class_name imp_compound_st :st #add_implementation(class_name, st)]
+    implementation = ["@implementation" id :class_name imp_compound_st :st #add_implementation(current_block, class_name, st)]
     imp_compound_st = [
     '{'
     __scope__ :current_block #new_blockstmt(_, current_block)
@@ -153,10 +154,17 @@ def add_virtual(self, node, ast):
 
 
 @meta.hook(Kooc)
-def add_module(self, statement, ident):
+def add_module(self, ast, statement, ident):
+    for st in statement.body:
+        if isinstance(st._ctype, cnorm.nodes.FuncType) and \
+           st._ctype._storage == cnorm.nodes.Storages.INLINE:
+            raise BaseException('Keyword inline forbiddent in module declaration')
     ident = self.value(ident)
     mod = Module(ident, statement, self.recurs)
     decl_keeper.modules[ident] = mod
+    if self.recurs == False:
+        for decl in mod.decls:
+            ast.ref.body.append(decl)
     return True
 
 
@@ -183,12 +191,15 @@ def add_type(self, ast, class_name):
 
 
 @meta.hook(Kooc)
-def add_implementation(self, class_name, statement):
+def add_implementation(self, ast, class_name, statement):
     if self.recurs:
         return True
     class_name = self.value(class_name)
     imp = Implementation(class_name, statement)
     decl_keeper.implementations.append(imp)
+    for i in imp.imps:
+        ast.ref.body.append(i)
+    ast.ref.body.extend(imp.virtuals)
     return True
 
 
@@ -218,8 +229,11 @@ def add_import(self, ast, ident):
         return True
     if Kooc.types == None:
         Kooc.types = ast.ref.types
+    process = subprocess.Popen(["cpp", execPath + '/' + mod_name , execPath + '/' + mod_name + ".tmp"])
+    process.wait()
+
     a = Kooc(True)
-    r = a.parse_file(execPath + '/' + mod_name)
+    r = a.parse_file(execPath + '/' + mod_name + ".tmp")
     for elem in r.body:
         if type(elem) == cnorm.nodes.Decl:
             decl_keeper.ids.append(elem._name)

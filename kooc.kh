@@ -5,17 +5,18 @@ struct _kc_Object
 {
 	void *vt;
 	char *name;
+	char **inheritance;
 };
 
 
 @module Object
 {
-	const char *name_of_interface();
+	const char *name_of_interface(Object*);
 	Object *alloc();
 	Object *new();
-	void init();
-	void clean(Object *);
-	void delete();
+	void init(Object*);
+	void clean(Object*);
+	void delete(Object*);
 	int isKindOf(Object *,const char*);
 	int isKindOf(Object *, Object *);
 	int isInstanceOf(Object *, const char *);

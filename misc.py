@@ -3,20 +3,11 @@ import os
 from os.path import isfile
 from sys import argv
 import decl_keeper
+import subprocess
 from kooc_class import Kooc
 
 execPath = os.getcwd()
 filePath = os.path.realpath(os.path.dirname(__file__))
-
-def moduleTransfo(ast):
-    for mod in decl_keeper.modules:
-        if decl_keeper.modules[mod].recurs == False:
-            for decl in decl_keeper.modules[mod].decls:
-                ast.body.append(decl)
-    for imp in decl_keeper.implementations:
-        for i in imp.imps:
-            ast.body.append(i)
-        ast.body.extend(imp.virtuals)
 
 
 def add_include(ast):
@@ -64,18 +55,30 @@ def create_header():
     a = Kooc()
     res_h = a.parse_file(filePath + '/kooc.kh')
     res_h.body.insert(0, cnorm.nodes.Raw('#ifndef KOOC_H\n#define KOOC_H\n'))
-    moduleTransfo(res_h)
     decl_keeper.create_typedef_vt()
     res_h.body.append(cnorm.nodes.Raw('#endif\n'))
     res_h.body.insert(3, decl_keeper.typedef_vt_object)
     outFile = execPath + '/kooc.h'
     write_file_out(outFile, res_h)
-
     res_c = a.parse_file(filePath + '/kooc.kc')
+    mangle_object_calls(res_c)
     res_c.body.append(decl_keeper.instanciate_vtable())
-    res_c.body.pop(0)
-    res_c.body.extend(decl_keeper.implementations[0].imps)
     outFile = execPath + '/kooc.c'
     write_file_out(outFile, res_c)
-
     decl_keeper.clean_implementations()
+
+
+def mangle_object_calls(ast):
+    alloc_name = None
+    init_name = None
+    for decl in ast.body:
+        if hasattr(decl, '_name') and 'alloc' in decl._name:
+            alloc_name = decl._name
+        elif hasattr(decl, '_name') and 'init' in decl._name:
+            init_name = decl._name
+        elif hasattr(decl, '_name') and 'new' in decl._name:
+            decl.body.body[1].expr.params[1].call_expr.value = alloc_name
+            decl.body.body[2].expr.call_expr.value = init_name
+        elif hasattr(decl, '_name') and 'delete' in decl._name:
+            clean_name = decl_keeper.typedef_vt_object._ctype.fields[0]._name
+            decl.body.body[0].expr.call_expr.params[0].value = clean_name

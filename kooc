@@ -2,6 +2,7 @@
 
 import os
 import cnorm
+import subprocess
 from misc import *
 from kooc_class import *
 
@@ -11,27 +12,23 @@ def main():
 
     try:
         create_header()
+        process = subprocess.Popen(["cpp", inFile, inFile + ".tmp"])
+        process.wait()
+        #print(process.stdout)
         a = Kooc()
-        res = a.parse_file(inFile)
+        res = a.parse_file(inFile + ".tmp")
         add_include(res)
     except BaseException as e:
         print(e)
         raise
-        return
 
     if 'Object' in decl_keeper.modules:
         del decl_keeper.modules['Object']
-    moduleTransfo(res)
     if outFile.endswith('.h'):
         add_defines(res, outFile)
-
-    #for i in res.body:
-    #    if hasattr(i, '_name') and 'izi' in i._name:
-    #        print(i)
-
     write_file_out(outFile, res)
     return 0
-    
-    
+
+
 if __name__ == '__main__':
     main()
