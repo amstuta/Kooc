@@ -207,18 +207,22 @@ class TyperTestCase(unittest.TestCase):
 
                 int f(int a);
                 int f(float a);
+                float f();
             };
 
             int main(int argc, char **argv)
             {
                 return [A f :[A f :0]];
-                return [A f :0];
+                return [A f :@!(float)[0]];
+                return [A f];
             }
             """)
             ast.resolve_type()
-            expected = Function(int_type, [ int_type ])
-            self.assertTrue(ast.body[0].body.body[0].expr.expr_type, expected)
-            self.assertTrue(ast.body[0].body.body[1].expr.expr_type, expected)
+            expected = int_type
+            expected2 = Type("float")
+            self.assertTrue(ast.body[5].body.body[0].expr.expr_type == expected)
+            self.assertTrue(ast.body[5].body.body[1].expr.expr_type == expected)
+            self.assertTrue(ast.body[5].body.body[2].expr.expr_type == expected2)
 
         def test_cast(self):
             ast = self.kooc.parse("""

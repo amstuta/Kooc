@@ -61,6 +61,8 @@ class Function(Type):
         self.params.append(param_type)
 
     def param(self, i):
+        if i >= len(self.params):
+           return None
         return self.params[i]
 
     def cmp_params(self, other_func):
@@ -188,7 +190,7 @@ def resolve_type(self, scope):
     return_type = PrimaryType.resolve_type(self, scope)
     t = Function(return_type)
     for param in self._params:
-        param_t = param.resolve_type(scope, None)
+        param_t = param.resolve_type(DefScope(), None)
         t.push_param(param_t)
     return t
 
@@ -263,12 +265,18 @@ def resolve_type(self, scope = None, type_set = None):
 def resolve_type(self, scope, type_set):
     self.expr_type = self._ctype.resolve_type(scope)
     if self._name in scope.defs:
-        raise Exception("redéfinition d'un symbole dans le même scope : `{}`".format(self._name)) #TODO(lakh): throw
+        raise Exception("redéfinition d'un symbole dans le même scope : `{}`".format(self._name))
     scope.defs[self._name] = self.expr_type
 
     if hasattr(self, "_assign_expr"):
+        new_scope = DefScope(scope)
+        if isinstance(self._ctype, FuncType):
+            for param in self._ctype.params:
+                if param._name in scope.defs:
+                    raise Exception("redéfinition d'un symbole dans le même scope : `{}`".format(self._name))
+                new_scope.decls[param._name] = param.resolve_type()
         s = TypesSet([ self.expr_type ])
-        self._assign_expr.resolve_type(scope, s)
+        self._assign_expr.resolve_type(new_scope, s)
 
     new_scope = DefScope(scope)
     if hasattr(self, "body"):
@@ -284,7 +292,7 @@ def resolve_type(self, scope, type_set):
 
 @meta.add_method(Func)
 def resolve_type(self, scope, type_set):
-    t = self.call_expr.resolve_type(scope, None) #TODO(lakh): Traiter les parametres en premier ???????? Wtf sinon ? Ignorer ? On fait la selection plus tard ?
+    t = self.call_expr.resolve_type(scope, None) 
     if not isinstance(t, Function):
         raise Exception("call_expr de Func n'est pas une fonction : t : {}".format(repr(t))) #TODO(lakh): throw
     self.expr_type = t.return_type
@@ -325,11 +333,11 @@ def resolve_type(self, scope, type_set):
         return t
     elif self.value in decl_keeper.modules:
         module = decl_keeper.modules[self.value]
-        module.resolve_type(DefScope(), None)
+        module.resolve_type(DefScope(scope), None)
         return module.expr_type
     elif self.value in decl_keeper.classes:
         c = decl_keeper.classes[self.value]
-        c.resolve_type(DefScope(), None)
+        c.resolve_type(DefScope(scope), None)
         return c.expr_type
     raise Exception("symbole `{}` non défini".format(self.value)) #TODO(lakh): throw
 
@@ -357,7 +365,8 @@ def resolve_type(self, scope, type_set):
             tset = TypesSet()
             for f_type in f_types:
                 param_t = f_type.param(i)
-                tset.push(f_type)
+                if not param_t is None:
+                    tset.push(f_type)
             f_type = p.resolve_type(scope, tset)
             if not isinstance(f_type, Type):
                 raise Exception("Type ambigu")
