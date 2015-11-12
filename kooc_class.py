@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import sys
 import cnorm
 import subprocess
 from user_class import *
@@ -95,6 +96,8 @@ class Kooc(Grammar, Declaration):
     def __init__(self, path = None, flag=False):
         if path:
             self.fpath = os.path.dirname(os.path.abspath(path)) + '/'
+        else:
+            self.fpath = os.path.dirname(os.path.abspath(sys.argv[0])) + '/'
         self.recurs = flag
         super(Kooc, self).__init__()
 
@@ -164,7 +167,6 @@ def add_module(self, ast, statement, ident):
     ident = self.value(ident)
     mod = Module(ident, statement, self.recurs)
     decl_keeper.modules[ident] = mod
-    print("{} {}".format(ident, decl_keeper.modules[ident]))
     if self.recurs == False:
         for decl in mod.decls:
             ast.ref.body.append(decl)
@@ -226,7 +228,7 @@ def add_class(self, ast, class_name, statement):
 
 @meta.hook(Kooc)
 def add_import(self, ast, ident):
-    mod_name = self.value(ident)
+    mod_name = self.value(ident)[1:-1]
     if mod_name in Kooc.imports:
         return True
     if Kooc.types == None:
