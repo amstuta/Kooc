@@ -16,7 +16,7 @@ from cnorm.passes import to_c
 from pyrser import error
 
 execPath = os.getcwd()
-filePath = os.path.realpath(os.path.dirname(__file__))
+filePath = os.path.abspath(os.path.dirname(__file__))
 
 
 class Kooc(Grammar, Declaration):
@@ -60,7 +60,7 @@ class Kooc(Grammar, Declaration):
 
     declaration = [Declaration.declaration | module | import | implementation | class]
     module = ["@module" id :i Statement.compound_statement :st #add_module(current_block, st, i)]
-    import = ["@import" '"' [id ".kh"] :i '"' #add_import(current_block, i)]
+    import = ["@import" [Base.string] :i  #add_import(current_block, i)]
 
 
     class_compound_statement = [
@@ -232,18 +232,11 @@ def add_import(self, ast, ident):
     if Kooc.types == None:
         Kooc.types = ast.ref.types
 
-    fpath = self.fpath + mod_name
+    fpath = self.fpath + mod_name + ".tmp"
     process = subprocess.Popen(["cpp", fpath])
     process.wait()
-
     a = Kooc(fpath, True)
     r = a.parse_file(fpath)
-    print(r)
-    for decl in decl_keeper.modules:
-        print(decl)
-    for elem in r.body:
-        if type(elem) == cnorm.nodes.Decl:
-            decl_keeper.ids.append(elem._name)
     if not mod_name.endswith('.kh'):
         return True
     inc_name = mod_name.replace('.kh', '.h')
