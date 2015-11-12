@@ -92,7 +92,9 @@ class Kooc(Grammar, Declaration):
     imports = []
     types = None
 
-    def __init__(self, flag=False):
+    def __init__(self, path = None, flag=False):
+        if path:
+            self.fpath = os.path.dirname(os.path.abspath(path)) + '/'
         self.recurs = flag
         super(Kooc, self).__init__()
 
@@ -162,6 +164,7 @@ def add_module(self, ast, statement, ident):
     ident = self.value(ident)
     mod = Module(ident, statement, self.recurs)
     decl_keeper.modules[ident] = mod
+    print("{} {}".format(ident, decl_keeper.modules[ident]))
     if self.recurs == False:
         for decl in mod.decls:
             ast.ref.body.append(decl)
@@ -221,7 +224,6 @@ def add_class(self, ast, class_name, statement):
     ast.ref.body.append(inst)
     return True
 
-
 @meta.hook(Kooc)
 def add_import(self, ast, ident):
     mod_name = self.value(ident)
@@ -229,11 +231,16 @@ def add_import(self, ast, ident):
         return True
     if Kooc.types == None:
         Kooc.types = ast.ref.types
-    process = subprocess.Popen(["cpp", execPath + '/' + mod_name , execPath + '/' + mod_name + ".tmp"])
+
+    fpath = self.fpath + mod_name
+    process = subprocess.Popen(["cpp", fpath])
     process.wait()
 
-    a = Kooc(True)
-    r = a.parse_file(execPath + '/' + mod_name + ".tmp")
+    a = Kooc(fpath, True)
+    r = a.parse_file(fpath)
+    print(r)
+    for decl in decl_keeper.modules:
+        print(decl)
     for elem in r.body:
         if type(elem) == cnorm.nodes.Decl:
             decl_keeper.ids.append(elem._name)

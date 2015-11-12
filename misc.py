@@ -52,7 +52,7 @@ def check_argv():
 
 
 def create_header():
-    a = Kooc()
+    a = Kooc(filePath + '/kooc.kh')
     res_h = a.parse_file(filePath + '/kooc.kh')
     res_h.body.insert(0, cnorm.nodes.Raw('#ifndef KOOC_H\n#define KOOC_H\n'))
     decl_keeper.create_typedef_vt()

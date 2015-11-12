@@ -1,5 +1,6 @@
 import mangler
 import cnorm
+from cnorm.nodes import *
 from copy import deepcopy
 
 class Module:
@@ -30,3 +31,17 @@ class Module:
 
         # Declaration trouvee dans le fichier courrant ou non
         self.recurs = flag
+
+    def funcs(self, name):
+        out = []
+        for decl in self.decls:
+            if decl.saved_name == name and isinstance(decl._ctype, FuncType):
+                out.append(decl)
+        return out
+
+    def variables(self, name):
+        out = []
+        for decl in self.decls:
+            if decl.saved_name == name and not isinstance(decl._ctype, FuncType):
+                out.append(decl)
+        return out

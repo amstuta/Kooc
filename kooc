@@ -5,7 +5,8 @@ import cnorm
 import subprocess
 from misc import *
 from kooc_class import *
-
+from kooc_transfo import *
+import kooc_typer
 
 def main():
     inFile, outFile = check_argv()
@@ -15,8 +16,10 @@ def main():
         process = subprocess.Popen(["cpp", inFile, inFile + ".tmp"])
         process.wait()
         #print(process.stdout)
-        a = Kooc()
+        a = Kooc(inFile + ".tmp")
         res = a.parse_file(inFile + ".tmp")
+        res.resolve_type()
+        res.doKoocTransfo()
         add_include(res)
     except BaseException as e:
         print(e)

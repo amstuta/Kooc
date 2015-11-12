@@ -117,6 +117,14 @@ class Struct(Type):
                 o.append(f.v_type)
         return o
 
+    def variables(self, name):
+        o = []
+        for f in self.fields:
+            if isinstance(f, Variable) and f.name == name and not isinstance(f.v_type, Function):
+                o.append(f.v_type)
+        return o
+
+
     def __eq__(self, other):
         if isinstance(other, Variable):
             return self == other.v_type
@@ -183,6 +191,7 @@ def resolve_type(self, scope):
         if isinstance(declt, PointerType) or isinstance(declt, ArrayType):
             t = Pointer(t)
         declt = declt._decltype
+    self.expr_type = t
     return t
 
 @meta.add_method(FuncType)
@@ -192,6 +201,7 @@ def resolve_type(self, scope):
     for param in self._params:
         param_t = param.resolve_type(DefScope(), None)
         t.push_param(param_t)
+    self.expr_type = t
     return t
 
 @meta.add_method(ComposedType)
@@ -209,6 +219,7 @@ def resolve_type(self, scope):
         if not self._identifier in scope.decls:
             raise Exception("Utilisation d'un symbole non defini : `{}`".format(self._identifier))
         t = scope.find_decl(self._identifier)
+    self.expr_type = t
     return t
 
 ### End CType resolver
@@ -269,18 +280,17 @@ def resolve_type(self, scope, type_set):
     scope.defs[self._name] = self.expr_type
 
     if hasattr(self, "_assign_expr"):
+        s = TypesSet([ self.expr_type ])
+        self._assign_expr.resolve_type(scope, s)
+
+    if hasattr(self, "body"):
         new_scope = DefScope(scope)
         if isinstance(self._ctype, FuncType):
             for param in self._ctype.params:
                 if param._name in scope.defs:
-                    raise Exception("redéfinition d'un symbole dans le même scope : `{}`".format(self._name))
-                new_scope.decls[param._name] = param.resolve_type()
-        s = TypesSet([ self.expr_type ])
-        self._assign_expr.resolve_type(new_scope, s)
-
-    new_scope = DefScope(scope)
-    if hasattr(self, "body"):
-        self.body.resolve_type(scope)
+                    raise Exception("redéfinition d'un symbole dans le même scope : `{}`".format(param._name))
+                new_scope.defs[param._name] = param.expr_type
+        self.body.resolve_type(new_scope)
     return self.expr_type
 
 @meta.add_method(BlockInit)
@@ -334,10 +344,12 @@ def resolve_type(self, scope, type_set):
     elif self.value in decl_keeper.modules:
         module = decl_keeper.modules[self.value]
         module.resolve_type(DefScope(scope), None)
+        self.expr_type = module.expr_type
         return module.expr_type
     elif self.value in decl_keeper.classes:
         c = decl_keeper.classes[self.value]
         c.resolve_type(DefScope(scope), None)
+        self.expr_type = c.expr_type
         return c.expr_type
     raise Exception("symbole `{}` non défini".format(self.value)) #TODO(lakh): throw
 
@@ -380,9 +392,17 @@ def resolve_type(self, scope, type_set):
         if len(result) > 1:
             raise Exception("appel fonction ambigu pour {}".format(self.member))
         self.expr_type = result[0].return_type
+        self.func_type = result[0]
         return self.expr_type
     else:
-        pass
+        v_types = struct_type.variables(self.member)
+        result_set = type_set.intersect(TypesSet(v_types))
+        if len(result_set.types) == 0:
+            raise Exception("pas d'overload disponible pour {}".format(self.member))
+        if len(result_set.types) > 1:
+            raise Exception("appel fonction ambigu pour {}".format(self.member))
+        self.expr_type = result_set.types[0]
+        return self.expr_type
 
 @meta.add_method(Module)
 def resolve_type(self, scope, type_set):
