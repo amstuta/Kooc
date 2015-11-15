@@ -312,20 +312,13 @@ class TyperTestCase(unittest.TestCase):
 
             @class A : B
             {
-                int f(int a);
-                @member int f(int a);
                 @member int c(int a);
-                @member int x;
-                @virtual int b(int a);
             }
 
             int main(int argc, char **argv)
             {
-                A *a;
-                [A f :argc];
-                [A c :a :argc];
-                [a c :argc];
-                [a.x];
+                A *zzzz;
+                [zzzz c :argc];
 
             }
             """)
