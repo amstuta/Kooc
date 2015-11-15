@@ -112,10 +112,10 @@ class ImplementationTestCase(unittest.TestCase):
         self = Func$A$alloc$P$A();
         Func$A$init$$void$P$A$$int(self, a);
         ((Object *) self)->name = "A";
-        ((Object *) self)->vt = vtable_A;
+        ((Object *) self)->vt = &vtable_A;
         ((Object *) self)->inheritance = malloc((1 + 1) * sizeof (char *));
         ((Object *) self)->inheritance[0] = "Object";
-        ((Object *) self)->inheritance[1] = NULL;
+        ((Object *) self)->inheritance[1] = 0;
         return (self);
         }
         """
@@ -156,11 +156,11 @@ class ImplementationTestCase(unittest.TestCase):
         self = Func$B$alloc$P$B();
         Func$B$init$$void$P$B$$int(self, b);
         ((Object *) self)->name = "B";
-        ((Object *) self)->vt = vtable_B;
+        ((Object *) self)->vt = &vtable_B;
         ((Object *) self)->inheritance = malloc((2 + 1) * sizeof (char *));
         ((Object *) self)->inheritance[0] = "A";
         ((Object *) self)->inheritance[1] = "Object";
-        ((Object *) self)->inheritance[2] = NULL;
+        ((Object *) self)->inheritance[2] = 0;
         return (self);
         }
         """
@@ -193,10 +193,10 @@ class ImplementationTestCase(unittest.TestCase):
         self = Func$A$alloc$P$A();
         Func$A$init$$void$P$A$$int(self, a);
         ((Object *) self)->name = "A";
-        ((Object *) self)->vt = vtable_A;
+        ((Object *) self)->vt = &vtable_A;
         ((Object *) self)->inheritance = malloc((1 + 1) * sizeof (char *));
         ((Object *) self)->inheritance[0] = "Object";
-        ((Object *) self)->inheritance[1] = NULL;
+        ((Object *) self)->inheritance[1] = 0;
         return (self);
         }
         """
@@ -208,10 +208,10 @@ class ImplementationTestCase(unittest.TestCase):
         self = Func$A$alloc$P$A();
         Func$A$init$$void$P$A$$float(self, a);
         ((Object *) self)->name = "A";
-        ((Object *) self)->vt = vtable_A;
+        ((Object *) self)->vt = &vtable_A;
         ((Object *) self)->inheritance = malloc((1 + 1) * sizeof (char *));
         ((Object *) self)->inheritance[0] = "Object";
-        ((Object *) self)->inheritance[1] = NULL;
+        ((Object *) self)->inheritance[1] = 0;
         return (self);
         }
         """
@@ -268,7 +268,7 @@ class ImplementationTestCase(unittest.TestCase):
         expected = """
         void Func$A$delete$$void$P$A(A *self)
         {
-        ((Object *) self)->vt->clean$$void(self);
+        ((vt_A *)((Object *) self)->vt)->clean$$void(self);
         }
         """
         for decl in res.body:
