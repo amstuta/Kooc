@@ -3,6 +3,7 @@ import mangler
 from copy import deepcopy
 import decl_keeper
 from cnorm.parsing.declaration import Declaration
+from cnorm.nodes import *
 
 class Class:
 
@@ -28,6 +29,7 @@ class Class:
                             self.add_new_proto(i)
                         self.add_self_param(i)
                         self.non_mangled.append(deepcopy(i))
+                        i.saved_name = i._name
                         i._name = mangler.muckFangle(i, class_name)
                         self.members.append(i)
                 else:
@@ -35,6 +37,7 @@ class Class:
                         self.add_new_proto(m)
                     self.add_self_param(m)
                     self.non_mangled.append(deepcopy(m))
+                    m.saved_name = m._name
                     m._name = mangler.muckFangle(m, class_name)
                     self.members.append(m)
 
@@ -45,9 +48,11 @@ class Class:
                 if isinstance(v, cnorm.nodes.BlockStmt):
                     for item in v.body:
                         self.add_self_param(item)
+                        item.saved_name = item._name
                         self.virtuals[item._name] = item
                 else:
                     self.add_self_param(v)
+                    v.saved_name = v._name
                     self.virtuals[v._name] = v
 
         # Mangling et save des non membres
@@ -56,6 +61,7 @@ class Class:
         for d in statement.body:
             if isinstance(d, cnorm.nodes.BlockStmt):
                 for i in d.body:
+                    i.saved_name = i._name
                     i._name = mangler.muckFangle(i, class_name)
                     if not isinstance(i._ctype, cnorm.nodes.FuncType):
                         self.decls_vars.append(i)
@@ -65,6 +71,7 @@ class Class:
                     else:
                         self.decls.append(i)
             else:
+                d.saved_name = d._name
                 d._name = mangler.muckFangle(d, class_name)
                 if not isinstance(d._ctype, cnorm.nodes.FuncType):
                     self.decls_vars.append(d)
@@ -164,7 +171,7 @@ class Class:
         decl = cnorm.nodes.Decl('alloc', ctype)
         dec_n = mangler.muckFangle(decl, self.ident)
         decl._name = dec_n
-        setattr(decl, 'save_name', 'alloc')
+        setattr(decl, 'saved_name', 'alloc')
         self.protos.append(decl)
 
 
@@ -177,7 +184,7 @@ class Class:
                ', '.join([str(c.to_c()).rstrip() for c in decl._ctype.params]).replace(';', '')))
         dcl = res.body[1]
         dcl._name = mangler.muckFangle(dcl, self.ident)
-        setattr(decl, 'save_name', 'new')
+        setattr(decl, 'saved_name', 'new')
         self.protos.append(dcl)
 
 
@@ -189,7 +196,7 @@ class Class:
         """ % (self.ident, self.ident, self.ident))
         decl = res.body[1]
         decl._name = mangler.muckFangle(decl, self.ident)
-        setattr(decl, 'save_name', 'delete')
+        setattr(decl, 'saved_name', 'delete')
         self.members.append(decl)
 
         
@@ -320,6 +327,7 @@ class Class:
             return
         mom = decl_keeper.inher[self.ident]
         decl = cnorm.nodes.Decl('parent', cnorm.nodes.PrimaryType(mom))
+        decl.saved_name = decl._name
         self.members.insert(0, decl)
 
 
@@ -327,3 +335,39 @@ class Class:
         if self.members != [] and self.members[0]._name == 'parent':
             return True
         return False
+
+    def funcs(self, name):
+        out = []
+        for decl in self.decls:
+            if decl.saved_name == name and isinstance(decl._ctype, FuncType):
+                out.append(decl)
+        return out
+
+    def variables(self, name):
+        out = []
+        for decl in self.decls:
+            if decl.saved_name == name and not isinstance(decl._ctype, FuncType):
+                out.append(decl)
+        return out
+
+    def member_vars(self, name):
+        out = []
+        for decl in self.members:
+            if decl.saved_name == name and not isinstance(decl._ctype, FuncType):
+                out.append(decl)
+        return out
+
+    def member_funcs(self, name):
+        out = []
+        for decl in self.members:
+            if decl.saved_name == name and isinstance(decl._ctype, FuncType):
+                out.append(decl)
+        return out
+
+    def virtual_funcs(self, name):
+        out = []
+        for decl_name in self.virtuals:
+            decl = self.virtuals[decl_name]
+            if decl.saved_name == name and isinstance(decl._ctype, FuncType):
+                out.append(decl)
+        return out

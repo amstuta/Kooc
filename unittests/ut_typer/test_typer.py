@@ -163,6 +163,75 @@ class TyperTestCase(unittest.TestCase):
             expected = int_type
             self.assertTrue(ast.body[0]._assign_expr.expr_type == expected)
 
+        def test_dot_array(self):
+            ast = self.kooc.parse("""
+                struct A { int a; };
+
+                int main(int argc, char **argv)
+                {
+                    struct A a, *b;
+                    return a.a;
+                    return b->a;
+                }
+                """)
+            ast.resolve_type()
+            expected = int_type
+            self.assertTrue(ast.body[1].body.body[2].expr.expr_type == expected)
+            self.assertTrue(ast.body[1].body.body[3].expr.expr_type == expected)
+
+        def test_paren(self):
+            ast = self.kooc.parse("""
+                int main(int argc, char **argv)
+                {
+                    return (1);
+                }
+                """)
+            ast.resolve_type()
+            expected = int_type
+            self.assertTrue(ast.body[0].body.body[0].expr.expr_type == expected)
+
+
+        def test_sizeof(self):
+            ast = self.kooc.parse(""" int main() { return sizeof(int); } """)
+            ast.resolve_type()
+            expected = int_type
+            self.assertTrue(ast.body[0].body.body[0].expr.expr_type == expected)
+
+        def test_post(self):
+            ast = self.kooc.parse(""" int main() { int a; a++; } """)
+            ast.resolve_type()
+            expected = int_type
+            self.assertTrue(ast.body[0].body.body[1].expr.expr_type)
+
+        def test_binary(self):
+            ast = self.kooc.parse(""" int main() { return 1 == 2; } """)
+            ast.resolve_type()
+            expected = int_type
+            self.assertTrue(ast.body[0].body.body[0].expr.expr_type)
+
+        def test_typedef(self):
+            ast = self.kooc.parse("""
+                    typedef int z;
+                    typedef struct a b;
+                    struct a {
+                        int a;
+                    };
+
+                    typedef struct x_s {
+                        float a;
+                    } x;
+                    int main(int argc, char **argv)
+                    {
+                        z a = 12;
+                        b b;
+                        x c;
+                        return c.a;
+                    }
+                    """)
+            ast.resolve_type()
+            expected = Type("float")
+            self.assertTrue(ast.body[4].body.body[3].expr.expr_type == expected)
+
         def test_dereference(self):
             ast = self.kooc.parse("int *a = 0; int b = *a;")
             ast.resolve_type()
@@ -226,6 +295,40 @@ class TyperTestCase(unittest.TestCase):
             self.assertTrue(main_f.body.body[1].expr.expr_type == expected)
             self.assertTrue(main_f.body.body[2].expr.expr_type == expected2)
             self.assertTrue(main_f.body.body[3].expr.expr_type == expected)
+
+        def test_bidon(self):
+            ast = self.kooc.parse("int* p;")
+            print(ast.body)
+
+        def test_class(self):
+            from misc import create_header
+            create_header()
+            ast = self.kooc.parse("""
+            @class B
+            {
+                @virtual int b(int a);
+            }
+
+            @class A : B
+            {
+                int f(int a);
+                @member int f(int a);
+                @member int c(int a);
+                @member int x;
+                @virtual int b(int a);
+            }
+
+            int main(int argc, char **argv)
+            {
+                A a;
+                [A f :argc];
+                [A c :&a :argc];
+                [a c :argc];
+                [a.x];
+
+            }
+            """)
+            ast.resolve_type()
 
         def test_cast(self):
             ast = self.kooc.parse("""
