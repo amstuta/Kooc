@@ -265,9 +265,14 @@ def resolve_type(self, scope):
             f_type = Variable(f._name, f.resolve_type(new_scope, None))
             t.add_field(f_type)
         t._is_incomplete = False
+        scope.decls[self._identifier] = t
     else:
-        t._is_incomplete = True
-    scope.decls[self._identifier] = t
+        tt = scope.find_decl(self._identifier)
+        if tt is not None:
+            t = tt
+        else:
+            t._is_incomplete = True
+            scope.decls[self._identifier] = t
     declt = self._decltype
     while not declt is None:
         if isinstance(declt, PointerType) or isinstance(declt, ArrayType):
@@ -366,6 +371,8 @@ def resolve_type(self, scope, type_set):
         if self._name in scope.defs:
             raise Exception("redéfinition d'un symbole dans le même scope : `{}`".format(self._name))
         scope.defs[self._name] = self.expr_type
+    else:
+        scope.decls[self._ctype._identifier] = self.expr_type
 
 
     if hasattr(self, "_assign_expr"):

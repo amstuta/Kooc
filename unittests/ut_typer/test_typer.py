@@ -174,6 +174,7 @@ class TyperTestCase(unittest.TestCase):
                     return b->a;
                 }
                 """)
+            print(ast.body)
             ast.resolve_type()
             expected = int_type
             self.assertTrue(ast.body[1].body.body[2].expr.expr_type == expected)
@@ -320,9 +321,9 @@ class TyperTestCase(unittest.TestCase):
 
             int main(int argc, char **argv)
             {
-                A a;
+                A *a;
                 [A f :argc];
-                [A c :&a :argc];
+                [A c :a :argc];
                 [a c :argc];
                 [a.x];
 
