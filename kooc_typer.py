@@ -146,15 +146,17 @@ class Struct(Type):
     def __eq__(self, other):
         if isinstance(other, Variable):
             return self == other.v_type
-        return self.name == other.name
-        if not isinstance(other, Struct):
-            return False
-        if len(self.fields) != len(other.fields):
-            return False
-        for (idx, field) in enumerate(self.fields):
-            if not field == other.fields[idx]:
+        if self.name == "%S" or other.name == "%S":
+            if len(self.fields) != len(other.fields):
                 return False
-        return True
+            for (idx, field) in enumerate(self.fields):
+                if not field == other.fields[idx]:
+                    return False
+        if (self.is_typedef and self.typedef_name == other.name) or (other.is_typedef and other.typedef_name == self.name):
+            return True
+        if self.is_typedef and other.is_typedef and self.typedef_name == other.typedef_name:
+            return True
+        return self.name == other.name
 
 class TypesSet():
     def __init__(self, types = None):
@@ -206,9 +208,9 @@ class TypesSet():
 def resolve_type(self, scope):
     typedef_t = scope.find_typedef(self._identifier)
     if typedef_t is not None:
-        self.expr_type = typedef_t
-        return self.expr_type
-    t = Type(self._identifier)
+        t = typedef_t
+    else:
+        t = Type(self._identifier)
     declt = self._decltype
     while not declt is None:
         if isinstance(declt, PointerType) or isinstance(declt, ArrayType):
@@ -250,6 +252,11 @@ def resolve_type(self, scope):
             d = copy.copy(decl_t)
             d.is_typedef = True
             d.typedef_name = typedef_t.typedef_name
+            declt = self._decltype
+            while not declt is None:
+                if isinstance(declt, PointerType) or isinstance(declt, ArrayType):
+                    d = Pointer(d)
+                declt = declt._decltype
             self.expr_type = d
             return self.expr_type
 
@@ -347,6 +354,7 @@ def resolve_type(self, scope, type_set):
     if self._ctype._storage == Storages.TYPEDEF:
         if self._name in scope.typedefs:
             raise Exception("redefinition d'un typedef dans le meme scope: {}".format(self._name))
+        t = copy.copy(self.expr_type)
         scope.typedefs[self._name] = copy.copy(self.expr_type)
         scope.typedefs[self._name].is_typedef = True
         scope.typedefs[self._name].typedef_name = self._name
@@ -532,10 +540,15 @@ def resolve_type(self, scope, type_set):
     struct_type = self.call_expr.resolve_type(scope, type_set) #TODO(lakh): verifier Struct
     if self.call:
         gtype = Function(None)
-        if isinstance(struct_type, Pointer) and struct_type.expr_type.name in decl_keeper.classes:
-            gtype.push_param(struct_type)
-            offset = 1
-            struct_type = decl_keeper.classes[struct_type.expr_type.name].resolve_type(scope, None)
+        if isinstance(struct_type, Pointer):
+            if struct_type.expr_type.name in decl_keeper.classes:
+                gtype.push_param(struct_type)
+                offset = 1
+                struct_type = decl_keeper.classes[struct_type.expr_type.name].resolve_type(scope, None)
+            elif struct_type.expr_type.is_typedef and struct_type.expr_type.typedef_name in decl_keeper.classes:
+                gtype.push_param(struct_type)
+                offset = 1
+                struct_type = decl_keeper.classes[struct_type.expr_type.typedef_name].resolve_type(scope, None)
         else:
             offset = 0
         f_types = struct_type.funcs(self.member)
