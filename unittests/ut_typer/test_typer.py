@@ -174,7 +174,6 @@ class TyperTestCase(unittest.TestCase):
                     return b->a;
                 }
                 """)
-            print(ast.body)
             ast.resolve_type()
             expected = int_type
             self.assertTrue(ast.body[1].body.body[2].expr.expr_type == expected)
@@ -299,7 +298,7 @@ class TyperTestCase(unittest.TestCase):
 
         def test_bidon(self):
             ast = self.kooc.parse("int* p;")
-            print(ast.body)
+            #print(ast.body)
 
         def test_class(self):
             from misc import create_header
