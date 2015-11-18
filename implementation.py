@@ -181,7 +181,7 @@ class Implementation:
                 
     # Ajoute le parametre self aux parametres de la fct membre
     def check_param(self, decl):
-        if isinstance(decl._ctype, cnorm.nodes.FuncType):
+        if hasattr(decl, '_ctype') and isinstance(decl._ctype, cnorm.nodes.FuncType):
             if not self.ident in decl_keeper.classes:
                 return None
             cl = decl_keeper.classes[self.ident]
